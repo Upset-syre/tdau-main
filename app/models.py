@@ -5,7 +5,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(20), unique=True, nullable=False)
+    username = db.Column(db.String(), unique=True, nullable=False)
     password = db.Column(db.String(200), nullable=False)
     phone = db.Column(db.String(20),  nullable=False)
     last_login = db.Column(db.DateTime, nullable = True)
@@ -654,6 +654,7 @@ class Admission_Foreign(db.Model):
             "accept_deadline" : self.accept_deadline,
             "aplication_type" : self.aplication_type,
             "education_type_id" : self.education_type_id,
+            "education_type_name" : self.education_type_foreign.name if self.education_type_foreign else None,
             'adress1' : self.adress1,
             'adress2' : self.adress2,
             'region' : self.region,
@@ -669,6 +670,7 @@ class Admission_Foreign(db.Model):
             'qualification2' : self.qualification2,
             'GPA' : self.GPA,
             'faculty_id' : self.faculty_id,
+            'faculty_name' : self.faculty_foreign.name if self.faculty_foreign else None,
             'status' : self.status,
             'attachments': [x.format() for x in self.attaches]
         }

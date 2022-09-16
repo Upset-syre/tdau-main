@@ -4,7 +4,7 @@ THREADS_PER_PAGE = 2
 CSRF_ENABLED     = True
 CSRF_SESSION_KEY = "secret"
 
-SQLALCHEMY_DATABASE_URI = "postgresql://postgres:postgres@127.0.0.1:5432/tdau"
+SQLALCHEMY_DATABASE_URI = "postgresql://postgres:o030101@127.0.0.1:5434/tdau"
 
 SECRET_KEY = "secret"
 FLASK_ADMIN_SWATCH = "yeti"

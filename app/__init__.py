@@ -43,8 +43,9 @@ def create_app(testing=False):
         header.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE')
         return response
     with app.app_context():
+        pass
         #db.drop_all()
-        db.create_all()
+        #db.create_all()
     admin = Admin(app,name='microblog', template_mode='bootstrap4')
     admin.add_view(ModelView(User, db.session))
     admin.add_view(ModelView(Role_meta, db.session))
