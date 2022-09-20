@@ -1,0 +1,14 @@
+
+{% if current_user.is_authenticated %}
+
+{% extends 'admin/master.html' %}
+
+{% block body %}
+
+<p>Welcome to Admin Panel!</p>
+
+{% endblock %}
+
+{% else %}
+<a href="{{ url_for('flask__admin.login') }}">Login</a>
+{% endif %}

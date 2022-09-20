@@ -57,9 +57,9 @@ def hash_and_save(attach: FileStorage, folder : str) -> void:
     #     f.write(attach.read())
     bytes_f = attach.read()
     ret_data = hashlib.md5(bytes_f).hexdigest() + "_." + ext
-    with open(os.path.join('uploads', folder, ret_data), "wb") as f:
+    with open(os.path.join(current_app.root_path, 'uploads', folder, ret_data), "wb") as f:
         f.write(bytes_f)
-    return "uploads\\" + folder + "\\" + ret_data
+    return f"{current_app.root_path}\\uploads\\" + folder + "\\" + ret_data
     
 
 def Exist_username(username):

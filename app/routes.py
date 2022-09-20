@@ -1,3 +1,5 @@
+import secrets
+import shutil
 from fileinput import filename
 import uuid
 import requests
@@ -7,15 +9,14 @@ from .config import SECRET_KEY
 from .core import Create_Username, hash_and_save, token_required, Hash_File
 from .models import *
 import jwt
+
 from werkzeug.utils import secure_filename
 import os
 from datetime import date, timedelta
 import random
 import pandas as pd
-
+from . import db
 import sys
-
-
 
 tdau = Blueprint('tdau', __name__, url_prefix='/tdau')
 
@@ -31,7 +32,6 @@ def registration():
         user = User.query.filter_by(phone=phone).first()
         user_u = User.query.filter_by(username=username).first()
 
-        
         if user or user_u:
             return jsonify({'msg': 'error user with this phone or username already exist'}), 400
         else:
@@ -64,24 +64,25 @@ def registration():
             db.session.add(role_m)
             db.session.commit()
 
-            code = random.randint(1000,9999)
+            code = random.randint(1000, 9999)
 
             session = requests.Session()
             session.auth = ('eijara', "S5Qzy$B$")
             p = {
-                'messages' : {
-                    'recipient' : phone,
-                    'message-id' : 1,
-                    'sms' : {
-                        'originator' : '3700',
-                        'content' : {
-                            'text' : 'Hi! Your registration code is ' + str(code) + ' . Please enter it to complete your registration.',
+                'messages': {
+                    'recipient': phone,
+                    'message-id': 1,
+                    'sms': {
+                        'originator': '3700',
+                        'content': {
+                            'text': 'Hi! Your registration code is ' + str(
+                                code) + ' . Please enter it to complete your registration.',
                         }
                     }
                 }
             }
-            auth = session.post('http://91.204.239.44/broker-api/send',json = p)
-            
+            auth = session.post('http://91.204.239.44/broker-api/send', json=p)
+
             t_us.verify_code = code
             db.session.commit()
             print("Code : %s" % code)
@@ -122,7 +123,6 @@ def registration_code():
 
 @tdau.route("/login", methods=['POST'])
 def login_a():
-
     username = request.form.get('username')
     password = request.form.get('password')
 
@@ -198,7 +198,6 @@ def regions(u):
             print(adm.current_country)
             sts = [x.format() for x in Region.query.all()]
             return jsonify(sts)
-        
 
         return jsonify([x.format() for x in Region.query.all()])
 
@@ -480,7 +479,6 @@ def admission_form(u):
             db.session.commit()
 
         if resume:
-
             adm_att = Adm_Attach(
                 admission_id=adm.id,
                 info="resume",
@@ -490,7 +488,6 @@ def admission_form(u):
             db.session.commit()
 
         if recommendation:
-
             adm_att = Adm_Attach(
                 admission_id=adm.id,
                 info="recommendation",
@@ -499,7 +496,6 @@ def admission_form(u):
             db.session.add(adm_att)
             db.session.commit()
         if recommendation_second:
-
             adm_att = Adm_Attach(
                 admission_id=adm.id,
                 info="recommendation second",
@@ -549,11 +545,11 @@ def admission_confirm(u):
             }), 400
 
 
-
 @tdau.route('/main')
 def main():
     content = [x.format() for x in News.query.all()], [x.format()
-                                                       for x in University_foreign.query.all()], [x.format() for x in Billboard.query.all()]
+                                                       for x in University_foreign.query.all()], [x.format() for x in
+                                                                                                  Billboard.query.all()]
     #  \[x.format() for x in Billboard.query.all()]
 
     return jsonify(content)
@@ -614,7 +610,6 @@ def delete_admission_foreign(c):
 @tdau.route('/update_news', methods=['POST', 'GET'])
 @token_required
 def update_newspic(с):
-
     if request.method == 'POST':
 
         id = request.form.get('id')
@@ -644,7 +639,7 @@ def update_newspic(с):
 
         db.session.add(pic_edit)
         db.session.commit()
-    # else:
+        # else:
 
         return jsonify({"msg": "OK"})
     return jsonify({"msg": "update_news"})
@@ -689,7 +684,7 @@ def admission_read(с):
             data['qualification_info'] = i.path
         elif i.info == 'personal image':
             data['personal_image'] = i.path
-    print('data is ',data)
+    print('data is ', data)
     return jsonify(data)
 
 
@@ -762,48 +757,43 @@ def admission_form_foreign(u):
     university_id = request.form.get("university_id")
     personal_image = request.files.get("personal_image")
     if not Admission_Foreign.query.filter_by(user_id=u.id).first():
-            adm = Admission_Foreign(
-                user_id=u.id,
-                email=u.email,
-                phone=u.phone,
-                status=4,
-                university_id=university_id
-            )
-            db.session.add(adm)
-            db.session.commit()
+        adm = Admission_Foreign(
+            user_id=u.id,
+            email=u.email,
+            phone=u.phone,
+            status=4,
+            university_id=university_id
+        )
+        db.session.add(adm)
+        db.session.commit()
     if 'qualification_info' in request.files:
-
         qualification_info = request.files["qualification_info"]
     print(request.files)
     qualification_diploma = None
     if 'language_certificate' in request.files:
         qualification_diploma = request.files["language_certificate"]
-        
+
     # passport = None
     # if 'passport' in request.files:
     #     passport = request.files["passport"]
 
-
     # print(passport, flush = True)
-    
+
     resume = None
     if 'passport' in request.files:
         resume = request.files["passport"]
-    
-    print(resume, flush = True)
+
+    print(resume, flush=True)
 
     recommendation = None
     if 'recommendation' in request.files:
         recommendation = request.files["recommendation"]
 
-
     recommendation_second = None
     if 'recommendation_second' in request.files:
         recommendation_second = request.files["recommendation_second"]
-    
 
     adm = Admission_Foreign.query.filter_by(user_id=u.id).first()
-
 
     if adm:
         print("I am in admission inside", flush=True)
@@ -825,7 +815,7 @@ def admission_form_foreign(u):
             adm.birthdate = birthdate
         if passport_number:
             if Admission_Foreign.query.filter_by(passport_number=passport_number).first():
-                return jsonify({"msg": "passport number already exists"}),409
+                return jsonify({"msg": "passport number already exists"}), 409
             adm.passport_number = passport_number
         if university_id:
             adm.university_id = university_id
@@ -872,7 +862,6 @@ def admission_form_foreign(u):
         if country_permanent:
             adm.country_permanent = country_permanent
 
-
         if current_country:
             adm.current_country = current_country
 
@@ -891,7 +880,6 @@ def admission_form_foreign(u):
             else:
                 adm.phone = phone
 
-
         if phone_a:
             adm.phone_a = phone_a
 
@@ -907,9 +895,14 @@ def admission_form_foreign(u):
                 adm.email = email
 
         if qualification_info:
-            if Adm_Attach_Foreign.query.filter_by(admission_foreign_id=adm.id, university_foreign_id=adm.university_id, info="qualification info").first():
-                os.remove((Adm_Attach_Foreign.query.filter_by(admission_foreign_id=adm.id, university_foreign_id=adm.university_id, info="qualification info").first().path).replace('\\','/'))
-                Adm_Attach_Foreign.query.filter_by(admission_foreign_id=adm.id, university_foreign_id=adm.university_id, info="qualification info").delete()
+            if Adm_Attach_Foreign.query.filter_by(admission_foreign_id=adm.id, university_foreign_id=adm.university_id,
+                                                  info="qualification info").first():
+                os.remove((Adm_Attach_Foreign.query.filter_by(admission_foreign_id=adm.id,
+                                                              university_foreign_id=adm.university_id,
+                                                              info="qualification info").first().path).replace('\\',
+                                                                                                               '/'))
+                Adm_Attach_Foreign.query.filter_by(admission_foreign_id=adm.id, university_foreign_id=adm.university_id,
+                                                   info="qualification info").delete()
                 db.session.commit()
             adm_att = Adm_Attach_Foreign(
                 admission_foreign_id=adm.id,
@@ -923,9 +916,14 @@ def admission_form_foreign(u):
             print(adm_att.format())
 
         if qualification_diploma:
-            if Adm_Attach_Foreign.query.filter_by(admission_foreign_id=adm.id, university_foreign_id=adm.university_id, info="language certificate").first():
-                os.remove((Adm_Attach_Foreign.query.filter_by(admission_foreign_id=adm.id, university_foreign_id=adm.university_id, info="language certificate").first().path).remove('\\','/'))
-                Adm_Attach_Foreign.query.filter_by(admission_foreign_id=adm.id, university_foreign_id=adm.university_id, info="language certificate").delete()
+            if Adm_Attach_Foreign.query.filter_by(admission_foreign_id=adm.id, university_foreign_id=adm.university_id,
+                                                  info="language certificate").first():
+                os.remove((Adm_Attach_Foreign.query.filter_by(admission_foreign_id=adm.id,
+                                                              university_foreign_id=adm.university_id,
+                                                              info="language certificate").first().path).remove('\\',
+                                                                                                                '/'))
+                Adm_Attach_Foreign.query.filter_by(admission_foreign_id=adm.id, university_foreign_id=adm.university_id,
+                                                   info="language certificate").delete()
                 db.session.commit()
             adm_att = Adm_Attach_Foreign(
 
@@ -956,11 +954,17 @@ def admission_form_foreign(u):
         #     db.session.commit()
         print("SSSSSSSSS", flush=True)
         if resume:
-            print('Oneni blat', flush= True)
-            if Adm_Attach_Foreign.query.filter_by(admission_foreign_id=adm.id, university_foreign_id=adm.university_id, info="passport").first():
-                print(Adm_Attach_Foreign.query.filter_by(admission_foreign_id=adm.id, university_foreign_id=adm.university_id, info="passport").first().path, flush=True)
-                os.remove(Adm_Attach_Foreign.query.filter_by(admission_foreign_id=adm.id, university_foreign_id=adm.university_id, info="passport").first().path.replace('\\', '/'))
-                Adm_Attach_Foreign.query.filter_by(admission_foreign_id=adm.id, university_foreign_id=adm.university_id, info="passport").delete()
+            print('Oneni blat', flush=True)
+            if Adm_Attach_Foreign.query.filter_by(admission_foreign_id=adm.id, university_foreign_id=adm.university_id,
+                                                  info="passport").first():
+                print(Adm_Attach_Foreign.query.filter_by(admission_foreign_id=adm.id,
+                                                         university_foreign_id=adm.university_id,
+                                                         info="passport").first().path, flush=True)
+                os.remove(Adm_Attach_Foreign.query.filter_by(admission_foreign_id=adm.id,
+                                                             university_foreign_id=adm.university_id,
+                                                             info="passport").first().path.replace('\\', '/'))
+                Adm_Attach_Foreign.query.filter_by(admission_foreign_id=adm.id, university_foreign_id=adm.university_id,
+                                                   info="passport").delete()
                 db.session.commit()
             adm_att = Adm_Attach_Foreign(
                 admission_foreign_id=adm.id,
@@ -971,12 +975,16 @@ def admission_form_foreign(u):
             db.session.add(adm_att)
             db.session.commit()
         else:
-            print('aeweaweaweaweawe', flush = True)
+            print('aeweaweaweaweawe', flush=True)
 
         if recommendation:
-            if Adm_Attach_Foreign.query.filter_by(admission_foreign_id=adm.id, university_foreign_id=adm.university_id, info="recommendation").first():
-                os.remove(Adm_Attach_Foreign.query.filter_by(admission_foreign_id=adm.id, university_foreign_id=adm.university_id, info="recommendation").first().path.replace('\\', '/'))
-                Adm_Attach_Foreign.query.filter_by(admission_foreign_id=adm.id, university_foreign_id=adm.university_id, info="recommendation").delete()
+            if Adm_Attach_Foreign.query.filter_by(admission_foreign_id=adm.id, university_foreign_id=adm.university_id,
+                                                  info="recommendation").first():
+                os.remove(Adm_Attach_Foreign.query.filter_by(admission_foreign_id=adm.id,
+                                                             university_foreign_id=adm.university_id,
+                                                             info="recommendation").first().path.replace('\\', '/'))
+                Adm_Attach_Foreign.query.filter_by(admission_foreign_id=adm.id, university_foreign_id=adm.university_id,
+                                                   info="recommendation").delete()
                 db.session.commit()
             adm_att = Adm_Attach_Foreign(
                 admission_foreign_id=adm.id,
@@ -988,9 +996,14 @@ def admission_form_foreign(u):
             db.session.add(adm_att)
             db.session.commit()
         if recommendation_second:
-            if Adm_Attach_Foreign.query.filter_by(admission_foreign_id=adm.id, university_foreign_id=adm.university_id, info="recommendation second").first():
-                os.remove(Adm_Attach_Foreign.query.filter_by(admission_foreign_id=adm.id, university_foreign_id=adm.university_id, info="recommendation second").first().path.replace('\\', '/'))
-                Adm_Attach_Foreign.query.filter_by(admission_foreign_id=adm.id, university_foreign_id=adm.university_id, info="recommendation second").delete()
+            if Adm_Attach_Foreign.query.filter_by(admission_foreign_id=adm.id, university_foreign_id=adm.university_id,
+                                                  info="recommendation second").first():
+                os.remove(Adm_Attach_Foreign.query.filter_by(admission_foreign_id=adm.id,
+                                                             university_foreign_id=adm.university_id,
+                                                             info="recommendation second").first().path.replace('\\',
+                                                                                                                '/'))
+                Adm_Attach_Foreign.query.filter_by(admission_foreign_id=adm.id, university_foreign_id=adm.university_id,
+                                                   info="recommendation second").delete()
                 db.session.commit()
 
             adm_att = Adm_Attach_Foreign(
@@ -1002,8 +1015,11 @@ def admission_form_foreign(u):
             db.session.add(adm_att)
             db.session.commit()
         if personal_image:
-            if Adm_Attach_Foreign.query.filter_by(admission_foreign_id=adm.id, university_foreign_id=adm.university_id, info="personal image").first():
-                pp = Adm_Attach_Foreign.query.filter_by(admission_foreign_id=adm.id, university_foreign_id=adm.university_id, info="personal image").first().path.replace('\\', '/')
+            if Adm_Attach_Foreign.query.filter_by(admission_foreign_id=adm.id, university_foreign_id=adm.university_id,
+                                                  info="personal image").first():
+                pp = Adm_Attach_Foreign.query.filter_by(admission_foreign_id=adm.id,
+                                                        university_foreign_id=adm.university_id,
+                                                        info="personal image").first().path.replace('\\', '/')
                 try:
                     with open(pp, 'rb') as f:
                         pass
@@ -1012,7 +1028,8 @@ def admission_form_foreign(u):
                     pass
                 # os.remove(pp)
                 # os.remove("%s"%Adm_Attach_Foreign.query.filter_by(admission_foreign_id=adm.id, university_foreign_id=adm.university_id, info="personal image").first().path)
-                Adm_Attach_Foreign.query.filter_by(admission_foreign_id=adm.id, university_foreign_id=adm.university_id, info="personal image").delete()
+                Adm_Attach_Foreign.query.filter_by(admission_foreign_id=adm.id, university_foreign_id=adm.university_id,
+                                                   info="personal image").delete()
                 db.session.commit()
 
             adm_att = Adm_Attach_Foreign(
@@ -1023,7 +1040,6 @@ def admission_form_foreign(u):
             )
             db.session.add(adm_att)
             db.session.commit()
-
 
         db.session.commit()
         return jsonify({'msg': "ok"}), 200
@@ -1071,14 +1087,11 @@ def admission_confirm_foreign(u):
             }), 400
 
 
-
 @tdau.route("/education_type_foreign", methods=['GET'])
 def education_type_foreign():
-
     if request.method == 'GET':
         sts = [x.format() for x in Education_type_foreign.query.all()]
         return jsonify(sts)
-
 
 
 @tdau.route("/faculties_foreign", methods=['GET'])
@@ -1157,26 +1170,26 @@ def add_university_foreign(с):
     if request.files.get('videos'):
         video = request.files.get('videos')
         video.save(os.path.join('uploads/videos/',
-               "university_foreign_id" + str(u.id) + secure_filename(str(video.filename))))
+                                "university_foreign_id" + str(u.id) + secure_filename(str(video.filename))))
         u.video = str(os.path.join('uploads/videos/',
-                  "university_foreign_id" + str(u.id) + secure_filename(str(video.filename))))
+                                   "university_foreign_id" + str(u.id) + secure_filename(str(video.filename))))
     elif request.form.get('videos'):
         video_str = request.form.get("videos")
         u.video = video_str
     logo.save(os.path.join('uploads/images/',
-              "university_foreign_id" + str(u.id) + secure_filename(str(logo.filename))))
+                           "university_foreign_id" + str(u.id) + secure_filename(str(logo.filename))))
     picture.save(os.path.join('uploads/images/',
-                 "university_foreign_id" + str(u.id) + secure_filename(str(picture.filename))))
+                              "university_foreign_id" + str(u.id) + secure_filename(str(picture.filename))))
     picture_desc.save(os.path.join('uploads/images/', "university_foreign_id" +
-                      str(u.id) + secure_filename(str(picture_desc.filename))))
-    
+                                   str(u.id) + secure_filename(str(picture_desc.filename))))
+
     u.logo = str(os.path.join('uploads/images/',
-                 "university_foreign_id" + str(u.id) + secure_filename(str(logo.filename))))
+                              "university_foreign_id" + str(u.id) + secure_filename(str(logo.filename))))
     u.picture = str(os.path.join(
         'uploads/images/', "university_foreign_id" + str(u.id) + secure_filename(str(picture.filename))))
     u.picture_desc = str(os.path.join(
         'uploads/images/', "university_foreign_id" + str(u.id) + secure_filename(str(picture_desc.filename))))
-    
+
     db.session.add(u)
     db.session.commit()
     ed_t = Education_type_foreign(name="Bachelor", university_id=u.id)
@@ -1223,7 +1236,7 @@ def edit_university_foreign(c):
         if request.files.get("logo"):
             logo = request.files.get("logo")
             logo.save(os.path.join('uploads/images/', "university_foreign_id" +
-                      str(uni.id) + secure_filename(str(logo.filename))))
+                                   str(uni.id) + secure_filename(str(logo.filename))))
             # delete old logo
             try:
                 os.remove(os.path.join('uploads/images/', uni.logo))
@@ -1234,19 +1247,19 @@ def edit_university_foreign(c):
         if request.files.get("picture"):
             picture = request.files.get("picture")
             picture.save(os.path.join('uploads/images/', "university_foreign_id" +
-                         str(uni.id) + secure_filename(str(picture.filename))))
+                                      str(uni.id) + secure_filename(str(picture.filename))))
             # delete old picture
             try:
                 os.remove(os.path.join('uploads/images/', uni.picture))
             except:
                 pass
-            
+
             uni.picture = str(os.path.join(
                 'uploads/images/', "university_foreign_id" + str(uni.id) + secure_filename(str(picture.filename))))
         if request.files.get("videos"):
             video = request.files.get("videos")
             video.save(os.path.join('uploads/videos/', "university_foreign_id" +
-                       str(uni.id) + secure_filename(str(video.filename))))
+                                    str(uni.id) + secure_filename(str(video.filename))))
             # delete old video
             if uni.video != 'none' or not uni.video:
                 try:
@@ -1261,8 +1274,8 @@ def edit_university_foreign(c):
         if request.files.get("picture_desc"):
             picture_desc = request.files.get("picture_desc")
             picture_desc.save(os.path.join('uploads/images/', "university_foreign_id" +
-                              str(uni.id) + secure_filename(str(picture_desc.filename))))
-            #delete old picture_desc
+                                           str(uni.id) + secure_filename(str(picture_desc.filename))))
+            # delete old picture_desc
             if uni.picture_desc != 'none' or not uni.picture_desc:
                 try:
                     os.remove(os.path.join('uploads/images/', uni.picture_desc))
@@ -1340,7 +1353,6 @@ def edit_bill():
         'bill_desc': bill.desc,
         'picture_bill': bill.picture,
 
-
     }
 
     return jsonify(jsonf)
@@ -1348,7 +1360,6 @@ def edit_bill():
 
 @tdau.route('/update_billboard', methods=['POST', 'GET'])
 def update_billboard():
-
     if request.method == 'POST':
         id = request.form.get('id')
         bill_edit = Billboard.query.get_or_404(id)
@@ -1392,16 +1403,14 @@ def update_billboard():
 
 @tdau.route('/delete_bill')
 def delete_bill():
-
     id = request.args.get('id')
     bill_to_delete = Billboard.query.get_or_404(id)
-
 
     db.session.delete(bill_to_delete)
     db.session.commit()
 
-
     return jsonify({"msg": "Done"})
+
 
 @tdau.route('/api/stats', methods=['GET'])
 def stats():
@@ -1419,25 +1428,26 @@ def stats():
     if 'news' in args or "all" in args:
         data['news'] = News.query.all()
     return jsonify(data)
-        
+
+
 @tdau.route('/excel', methods=['GET'])
 def excel():
     uid = request.args.get('uid')
 
-    adm = Admission_Foreign.query.filter_by(university_id=uid, register_step = 9).all()
+    adm = Admission_Foreign.query.filter_by(university_id=uid, register_step=9).all()
 
     data = []
     for a in adm:
         data.append(a.excel())
     df = pd.DataFrame(data=data)
-    direc= 'uploads'
+    direc = 'uploads'
     path = 'admissions_excel'
-    filename = "admissions%s.xlsx"%(uid)
-    full = direc + "/" + path + "/"+ filename
+    filename = "admissions%s.xlsx" % (uid)
+    full = direc + "/" + path + "/" + filename
     df.to_excel(full, index=False)
     return full
 
-    
+
 @tdau.route("/add_rector_msg", methods=['POST'])
 @token_required
 def add_rector_msg(c):
@@ -1460,28 +1470,29 @@ def add_rector_msg(c):
     if 'photo' in request.files:
         photo = request.files['photo']
         post.photo = hash_and_save(photo, 'admission')
-    
+
     db.session.commit()
 
     for add_info in add_infos:
         post_add_info = Additional_Info_Meta(
-            post_id = post.id,
-            key = add_info['title'],
-            value = add_info['text']
+            post_id=post.id,
+            key=add_info['title'],
+            value=add_info['text']
         )
         db.session.add(post_add_info)
         db.session.commit()
 
     for work_act in work_acts:
         post_work_act = Work_Activity_Meta(
-            post_id = post.id,
-            key = work_act['title'],
-            value = work_act['text']
+            post_id=post.id,
+            key=work_act['title'],
+            value=work_act['text']
         )
         db.session.add(post_work_act)
         db.session.commit()
-    
+
     return jsonify({"msg": "ok"})
+
 
 @tdau.route("/get_rector_msg", methods=['GET'])
 def get_rector_msg():
@@ -1491,12 +1502,13 @@ def get_rector_msg():
     return jsonify([post])
 
 
-@tdau.route('/get_faculty', methods = ['POST'])
+@tdau.route('/get_faculty', methods=['POST'])
 def get_faculty():
     name = request.form.get('type')
     print(name, flush=True)
-    facs =[x.syre_format() for x in Faculty_foreign.query.filter_by(code = name).all()]
+    facs = [x.syre_format() for x in Faculty_foreign.query.filter_by(code=name).all()]
     return jsonify(facs)
+
 
 @tdau.route("/add_structure", methods=['POST'])
 @token_required
@@ -1509,12 +1521,12 @@ def add_structure(c):
     reception_time = request.form.get('reception_time')
 
     st = Structure(
-        role = role,
-        fullname = fullname,
-        desc = description,
-        email = email,
-        phone = phone,
-        reception_time = reception_time
+        role=role,
+        fullname=fullname,
+        desc=description,
+        email=email,
+        phone=phone,
+        reception_time=reception_time
     )
     db.session.add(st)
 
@@ -1525,6 +1537,7 @@ def add_structure(c):
     db.session.commit()
 
     return jsonify({"msg": "ok"})
+
 
 @tdau.route("/add_rect_structure", methods=['POST'])
 @token_required
@@ -1536,12 +1549,12 @@ def add_rect_structure(c):
     reception_time = request.form.get('reception_time')
 
     st = Structure(
-        role = 'rector',
-        fullname = fullname,
-        desc = description,
-        email = email,
-        phone = phone,
-        reception_time = reception_time
+        role='rector',
+        fullname=fullname,
+        desc=description,
+        email=email,
+        phone=phone,
+        reception_time=reception_time
     )
     db.session.add(st)
 
@@ -1553,6 +1566,7 @@ def add_rect_structure(c):
 
     return jsonify({"msg": "ok"})
 
+
 @tdau.route("/get_structure", methods=['GET'])
 def get_structure():
     st = Structure.query.filter(Structure.role != 'rector').all()
@@ -1560,12 +1574,14 @@ def get_structure():
 
     return jsonify(st)
 
+
 @tdau.route("/get_rect_structure", methods=['GET'])
 def get_rect_structure():
     last_id = Structure.query.filter_by(role='rector').order_by(Structure.id.desc()).first().id
     st = Structure.query.get(last_id).format()
 
     return jsonify(st)
+
 
 @tdau.route("/edit_structure", methods=['GET', 'POST'])
 @token_required
@@ -1578,32 +1594,33 @@ def edit_structure(c):
                 if 'photo' in request.files:
                     photo = request.files['photo']
                     st.photo = hash_and_save(photo, 'structure')
-            
+
             if st.fullname:
                 fullname = request.form.get('fullname')
                 st.fullname = fullname
-            
+
             if st.desc:
                 description = request.form.get('description')
                 st.desc = description
-            
+
             if st.email:
                 email = request.form.get('email')
                 st.email = email
-            
+
             if st.phone:
                 phone = request.form.get('phone')
                 st.phone = phone
-            
+
             if st.reception_time:
                 reception_time = request.form.get('reception_time')
                 st.reception_time = reception_time
-            
+
             db.session.commit()
-    
+
     st = st.format()
 
     return jsonify(st)
+
 
 @tdau.route("/delete_structure", methods=['GET'])
 @token_required
@@ -1613,7 +1630,8 @@ def delete_structure(c):
 
     db.session.commit()
 
-    return jsonify({'msg' : 'ok'})
+    return jsonify({'msg': 'ok'})
+
 
 @tdau.route("/write_about_us", methods=['POST'])
 @token_required
@@ -1625,25 +1643,25 @@ def write_about_us(c):
 
     if not About_Page.query.all():
         ap = About_Page(
-            desc1 = desc1,
-            desc2 = desc2,
-            title = title,
-            link = link
+            desc1=desc1,
+            desc2=desc2,
+            title=title,
+            link=link
         )
         db.session.add(ap)
 
     else:
         ap = About_Page.query.first()
-        
+
         if ap.desc1:
             ap.desc1 = desc1
-        
+
         if ap.desc2:
             ap.desc2 = desc2
-        
+
         if ap.title:
             ap.title = title
-        
+
         if ap.link:
             ap.link = link
 
@@ -1654,10 +1672,11 @@ def write_about_us(c):
     if 'photo2' in request.files:
         photo = request.files['photo2']
         ap.photo2 = hash_and_save(photo, 'structure')
-        
+
     db.session.commit()
 
     return jsonify({"msg": "ok"})
+
 
 @tdau.route("/add_branch", methods=['POST'])
 @token_required
@@ -1671,13 +1690,13 @@ def add_branch(c):
     rector_email = request.form.get('rector_email')
 
     br = Branch(
-        name = name,
-        desc = desc,
-        rector_name = rector_name,
-        rector_reception = rector_reception,
-        rector_address = rector_address,
-        rector_phone = rector_phone,
-        rector_email = rector_email
+        name=name,
+        desc=desc,
+        rector_name=rector_name,
+        rector_reception=rector_reception,
+        rector_address=rector_address,
+        rector_phone=rector_phone,
+        rector_email=rector_email
     )
     db.session.add(br)
 
@@ -1701,6 +1720,7 @@ def add_branch(c):
 
     return jsonify({"msg": "ok"})
 
+
 @tdau.route("/add_prog", methods=['POST'])
 @token_required
 def add_prog(c):
@@ -1708,8 +1728,8 @@ def add_prog(c):
     desc = request.form.get('desc')
 
     pr = Programme(
-        name = name,
-        desc = desc
+        name=name,
+        desc=desc
     )
     db.session.add(pr)
 
@@ -1720,6 +1740,7 @@ def add_prog(c):
     db.session.commit()
 
     return jsonify({"msg": "ok"})
+
 
 @tdau.route("/add_fac", methods=['POST'])
 @token_required
@@ -1732,10 +1753,10 @@ def add_fac(c):
     metas = json.loads(metas)
 
     fc = Faculty_Data(
-        name = name,
-        desc = desc,
-        link = link,
-        programme_id = pr_id
+        name=name,
+        desc=desc,
+        link=link,
+        programme_id=pr_id
     )
     db.session.add(fc)
 
@@ -1748,9 +1769,9 @@ def add_fac(c):
 
     for meta in metas:
         fc_meta = Faculty_Data_Meta(
-            faculty_data_id = fc.id,
-            key = meta['title'],
-            value = meta['text']
+            faculty_data_id=fc.id,
+            key=meta['title'],
+            value=meta['text']
         )
         db.session.add(fc_meta)
         db.session.commit()
@@ -1759,11 +1780,13 @@ def add_fac(c):
 
     return jsonify({"msg": "ok"})
 
+
 @tdau.route("/about_us", methods=['GET'])
 def about_us():
-    au = About_Page.query.first().format()
+    au = About_Page.query.first()
 
     return jsonify(au)
+
 
 @tdau.route("/all_branches", methods=['GET'])
 def all_branches():
@@ -1774,6 +1797,7 @@ def all_branches():
 
     return jsonify(data)
 
+
 @tdau.route("/get_branch", methods=['GET'])
 def get_branch():
     id = request.args.get('id')
@@ -1781,14 +1805,16 @@ def get_branch():
 
     return jsonify(br)
 
+
 @tdau.route("/all_progs", methods=['GET'])
 def all_progs():
     pr = Programme.query.all()
     data = []
     for p in pr:
         data.append(p.format())
-    
+
     return jsonify(data)
+
 
 @tdau.route("/get_prog", methods=['GET'])
 def get_prog():
@@ -1797,14 +1823,16 @@ def get_prog():
 
     return jsonify(pr)
 
+
 @tdau.route("/all_facs", methods=['GET'])
 def all_facs():
     fc = Faculty_Data.query.all()
     data = []
     for f in fc:
         data.append(f.format())
-    
+
     return jsonify(data)
+
 
 @tdau.route("/get_fac", methods=['GET'])
 def get_fac():
@@ -1812,6 +1840,7 @@ def get_fac():
     fc = Faculty_Data.query.get(int(id)).format()
 
     return jsonify(fc)
+
 
 @tdau.route("/edit_branch", methods=['POST'])
 @token_required
@@ -1848,7 +1877,7 @@ def edit_branch(c):
     if br.rector_email:
         rector_email = request.form.get('rector_email')
         br.rector_email = rector_email
-    
+
     if br.photo1:
         if 'photo1' in request.files:
             photo = request.files['photo1']
@@ -1873,6 +1902,7 @@ def edit_branch(c):
 
     return jsonify({"msg": "ok"})
 
+
 @tdau.route("/delete_branch", methods=['GET'])
 @token_required
 def delete_branch(c):
@@ -1881,7 +1911,8 @@ def delete_branch(c):
 
     db.session.commit()
 
-    return jsonify({'msg' : 'ok'})
+    return jsonify({'msg': 'ok'})
+
 
 @tdau.route("/edit_prog", methods=['POST'])
 @token_required
@@ -1907,6 +1938,7 @@ def edit_prog(c):
 
     return jsonify({"msg": "ok"})
 
+
 @tdau.route("/delete_prog", methods=['GET'])
 @token_required
 def delete_prog(c):
@@ -1915,7 +1947,8 @@ def delete_prog(c):
 
     db.session.commit()
 
-    return jsonify({'msg' : 'ok'})
+    return jsonify({'msg': 'ok'})
+
 
 @tdau.route("/edit_fac", methods=['POST'])
 @token_required
@@ -1951,9 +1984,9 @@ def edit_fac(c):
     if fc.faculty_data_metas:
         for meta in metas:
             fc_meta = Faculty_Data_Meta(
-                faculty_data_id = fc.id,
-                key = meta['title'],
-                value = meta['text']
+                faculty_data_id=fc.id,
+                key=meta['title'],
+                value=meta['text']
             )
             db.session.add(fc_meta)
             db.session.commit()
@@ -1961,6 +1994,7 @@ def edit_fac(c):
     db.session.commit()
 
     return jsonify({"msg": "ok"})
+
 
 @tdau.route("/delete_fac", methods=['GET'])
 @token_required
@@ -1970,25 +2004,27 @@ def delete_fac(c):
 
     db.session.commit()
 
-    return jsonify({'msg' : 'ok'})
+    return jsonify({'msg': 'ok'})
 
-@tdau.route('admin_spawn',methods = ['GET'])
+
+@tdau.route('admin_spawn', methods=['GET'])
 def spawn_the_daun():
     username = 'admin'
     pswrd = '6569321John0604'
     admin = User(
-        username = username,
-        phone = '1111',
-        email = '1111',
-        passport_number = '1111',
-        pnfl = '1111'
+        username=username,
+        phone='1111',
+        email='1111',
+        passport_number='1111',
+        pnfl='1111'
     )
     admin.set_password(pswrd)
     db.session.add(admin)
     db.session.commit()
     return jsonify('when i was king')
 
-@tdau.route('/send_code',methods = ['POST'])
+
+@tdau.route('/send_code', methods=['POST'])
 def send_code():
     number = request.form.get('phone')
 
@@ -1996,26 +2032,27 @@ def send_code():
     if usr:
         session = requests.Session()
         session.auth = ('eijara', "S5Qzy$B$")
-        code = random.randint(1000,9999)
+        code = random.randint(1000, 9999)
         p = {
-            'messages' : {
-                'recipient' : number,
-                'message-id' : 1,
-                'sms' : {
-                    'originator' : '3700',
-                    'content' : {
-                        'text' : 'Hi! Your code is ' + str(code) + ' . Please enter it to reset your password.',
+            'messages': {
+                'recipient': number,
+                'message-id': 1,
+                'sms': {
+                    'originator': '3700',
+                    'content': {
+                        'text': 'Hi! Your code is ' + str(code) + ' . Please enter it to reset your password.',
                     }
                 }
             }
         }
-        session.post('http://91.204.239.44/broker-api/send',json = p)
+        session.post('http://91.204.239.44/broker-api/send', json=p)
         usr.verify_code = code
         db.session.commit()
 
-        return jsonify({"msg" : "success"})
-    
-    return jsonify({"msg" : "user not found"}), 400
+        return jsonify({"msg": "success"})
+
+    return jsonify({"msg": "user not found"}), 400
+
 
 @tdau.route("/reset_password/code", methods=['POST'])
 def reset_password_code():
@@ -2045,6 +2082,7 @@ def reset_password_code():
     else:
         return jsonify({"message": "Method not allowed"}), 405
 
+
 @tdau.route("/reset_password", methods=['POST'])
 @token_required
 def reset_password(c):
@@ -2053,4 +2091,264 @@ def reset_password(c):
     c.set_password(password)
     db.session.commit()
 
-    return jsonify({"msg" : "success"})
+    return jsonify({"msg": "success"})
+
+
+from .utils import *
+
+
+@token_required
+@tdau.route('/add_d', methods=['POST'])
+def addDeegres():
+    if request.method == 'POST':
+        upper_img = request.files.get('upper_img')
+        bottom_img = request.files.get('bottom_img')
+        degree = Degrees(
+            about=request.form.get('about'), university_name=request.form.get('name'),
+            video_link=request.form.get('video'),
+            degree=request.form.get('degree'))
+        db.session.add(degree)
+        db.session.flush()
+
+        if request.files.get('upper_img') and allowed_pic(upper_img.filename):
+            degree.upper_img = save_upper_picture(upper_img, degree.id)
+
+        if request.files.get('bottom_img') and allowed_pic(bottom_img.filename):
+            degree.bottom_img = save_bottom_picture(bottom_img, degree.id)
+
+        db.session.commit()
+        titles = request.form.get('title')
+        titles = eval(titles)
+        for i in titles:
+            t = Text_Fordegrees(title_or_info=i["title"],
+                                text=i["text"], fordegree_id=degree.id)
+            db.session.add(t)
+            db.session.commit()
+
+        return jsonify({'msg': 'Added!'}, 200)
+
+
+@tdau.route('/get_b')
+def getB():
+    bach = Degrees.query.filter_by(degree='bachelor').all()
+
+    return jsonify([x.format() for x in bach])
+
+
+@tdau.route('/get_m')
+def getM():
+    bach = Degrees.query.filter_by(degree='master').all()
+
+    return jsonify([x.format() for x in bach])
+
+
+@tdau.route('/get_p')
+def getP():
+    bach = Degrees.query.filter_by(degree='phd').all()
+
+    return jsonify([x.format() for x in bach])
+
+
+@token_required
+@tdau.route('/delete_d')
+def deleteDegree():
+    id = request.args.get('id')
+    degree = Degrees.query.get_or_404(id)
+
+    db.session.delete(degree)
+    full_path = os.path.join(current_app.root_path, 'static', str(degree.id))
+    shutil.rmtree(full_path)
+    db.session.commit()
+    return jsonify({'msg': 'deleted'}, 200)
+
+
+@token_required
+@tdau.route('/update_d', methods=['POST', 'GET'])
+def updateDegree():
+    upper_img = request.files.get('upper_img')
+    bottom_img = request.files.get('bottom_img')
+
+    if request.method == 'POST':
+        id = request.form.get('id')
+        degree_post = Degrees.query.get_or_404(id)
+        # degree.title = request.form.getlist('title')
+        # degree.description = request.form.getlist('desc')
+        degree_post.about = request.form.get('about')
+        degree_post.university_name = request.form.get('name')
+        degree_post.video_link = request.form.get('video')
+        degree_post.degree = request.form.get('degree')
+        if request.files.get('upper_img') and allowed_pic(upper_img.filename):
+            degree_post.upper_img = save_upper_picture(upper_img, degree_post.id)
+
+        if request.files.get('bottom_img') and allowed_pic(bottom_img.filename):
+            degree_post.bottom_img = save_bottom_picture(bottom_img, degree_post.id)
+        db.session.commit()
+        if request.form.get("title"):
+            titles = request.form.get("title")
+
+            titles = eval(titles)
+            if len(titles) > 0:
+                for j in Text_Fordegrees.query.filter_by(fordegree_id=id).all():
+                    db.session.delete(j)
+                    db.session.commit()
+                for i in titles:
+                    db.session.add(Text_Fordegrees(
+                        fordegree_id=degree_post.id, title_or_info=i['title'], text=i['text']))
+                    db.session.commit()
+        return jsonify({'msg': 'updated'})
+
+
+@token_required
+@tdau.route('/update_d_get', methods=['POST', 'GET'])
+def updateDegree_get():
+    id = request.args.get('id')
+    degree = Degrees.query.get_or_404(id)
+    return degree.format()
+
+
+@token_required
+@tdau.route('/add_newspage', methods=['POST'])
+def addNewspage():
+    img = request.files.get('img')
+    news_page = NewsPage(title=request.form.get('title'), desc=request.form.get('desc'))
+    db.session.add(news_page)
+    db.session.flush()
+    print(img)
+    if img and allowed_pic(img.filename):
+        news_page.img = save_page_picture(img, news_page.id)
+    db.session.commit()
+    return jsonify({'msg': 'added'}, 200)
+
+
+@tdau.route('/get_newspage')
+def getNewspage():
+    id = request.args.get('id')
+    news_page = NewsPage.query.get(id)
+
+    return news_page.format()
+
+
+@token_required
+@tdau.route('/update_newspage', methods=['POST'])
+def updateNewsPage():
+    id = request.form.get('id')
+    img = request.files.get('img')
+    news_page = NewsPage.query.get(id)
+
+    news_page.title = request.form.get('title')
+    news_page.desc = request.form.get('desc')
+    if img and allowed_pic(img.filename):
+        news_page.img = save_page_picture(img, news_page.id)
+    db.session.commit()
+    return jsonify({'msg': 'updated!'}, 200)
+
+
+@token_required
+@tdau.route('/delete_newspage')
+def delete():
+    id = request.args.get('id')
+    news_page = NewsPage.query.get(id)
+
+    db.session.delete(news_page)
+    full_path = os.path.join(current_app.root_path, 'news_page', str(news_page.id))
+    shutil.rmtree(full_path)
+    db.session.commit()
+    return jsonify({'msg': 'deleted!'}, 200)
+
+
+@token_required
+@tdau.route('/update_np_get', methods=['GET'])
+def updateNp_get():
+    id = request.args.get('id')
+    news_page = NewsPage.query.get_or_404(id)
+    return news_page.format()
+
+
+@token_required
+@tdau.route('/add_card', methods=['POST'])
+def addCard():
+    upper_img = request.files.get('upper_img')
+    bottom_img = request.files.get('bottom_img')
+    card = News2(about=request.form.get('about'), video_link=request.form.get('video'), name=request.form.get('name'))
+
+    db.session.add(card)
+    db.session.flush()
+
+    if upper_img and allowed_pic(upper_img.filename):
+        card.upper_img = save_upper_picture2(upper_img, card.id)
+
+    if bottom_img and allowed_pic(bottom_img.filename):
+        card.bottom_img = save_bottom_picture2(bottom_img, card.id)
+
+    db.session.commit()
+    titles = request.form.get('title')
+    titles = eval(titles)
+    for i in titles:
+        t = Text_ForNews(title_or_info=i["title"],
+                         text=i["text"], fordegree_id=card.id)
+        db.session.add(t)
+        db.session.commit()
+    return jsonify({'msg': 'added!'})
+
+
+@token_required
+@tdau.route('/update_card', methods=['POST'])
+def updateCArd():
+    id = request.form.get('id')
+    upper_img = request.files.get('upper_img')
+    bottom_img = request.files.get('bottom_img')
+    card = News2.query.get(id)
+
+    card.name = request.form.get('name')
+    card.about = request.form.get('about')
+    card.video_link = request.form.get('video')
+
+    if upper_img and allowed_pic(upper_img.filename):
+        card.upper_img = save_upper_picture2(upper_img, card.id)
+
+    if bottom_img and allowed_pic(bottom_img.filename):
+        card.bottom_img = save_bottom_picture2(bottom_img, card.id)
+    db.session.commit()
+    if request.form.get("title"):
+        titles = request.form.get("title")
+
+        titles = eval(titles)
+        if len(titles) > 0:
+            for j in Text_ForNews.query.filter_by(fordegree_id=id).all():
+                db.session.delete(j)
+                db.session.commit()
+            for i in titles:
+                db.session.add(Text_ForNews(
+                    fordegree_id=card.id, title_or_info=i['title'], text=i['text']))
+                db.session.commit()
+    return jsonify({'msg': 'updated'})
+
+
+@token_required
+@tdau.route('/delete_card')
+def deleteCard():
+    id = request.args.get('id')
+    card = News2.query.get(id)
+
+    db.session.delete(card)
+    full_path = os.path.join(current_app.root_path, 'card', str(card.id))
+    shutil.rmtree(full_path)
+    db.session.commit()
+    return jsonify({'msg': 'deleted!'}, 200)
+
+
+@tdau.route('/get_card')
+def getCard():
+    id = request.args.get('id')
+    card = News2.query.get(id)
+    cards = News2.query.order_by(func.random()).filter(News2.id != card.id).limit(3)
+
+    return card.format(cards)
+
+
+@token_required
+@tdau.route('/update_card_get', methods=['GET'])
+def updateCard_get():
+    id = request.args.get('id')
+    card = News2.query.get_or_404(id)
+    return card.format2()

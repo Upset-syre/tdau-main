@@ -1,3 +1,5 @@
+import json
+from sqlalchemy import func
 from app import db
 from sqlalchemy.orm import relationship
 import datetime
@@ -1064,5 +1066,158 @@ class Structure(db.Model):
             'desc' : self.desc,
             'email' : self.email,
             'phone' : self.phone,
-            'reception_time' : self.reception_time
+            'reception_time' : self.reception_time,
+
+        }
+
+
+
+class JsonEcodeDict(db.TypeDecorator):
+    impl = db.Text
+
+    def process_bind_param(self, value, dialect):
+        if value is None:
+            return '[]'
+        else:
+            return json.dumps(value)
+
+    def process_result_value(self, value, dialect):
+        if value is None:
+            return []
+        else:
+            return json.loads(value)
+
+
+
+
+
+
+class Degrees(db.Model):
+
+    id = db.Column(db.Integer, primary_key=True)
+    # title = db.Column(JsonEcodeDict)
+    # description = db.Column(JsonEcodeDict)
+    upper_img = db.Column(db.Text)
+    bottom_img = db.Column(db.Text)
+    about = db.Column(db.Text)
+    video_link = db.Column(db.Text)
+    university_name = db.Column(db.Text)
+    degree = db.Column(db.Text)
+    text_fordegrees = db.relationship('Text_Fordegrees', backref='text_degree', lazy=True, cascade="all, delete-orphan")
+
+
+    def format(self):
+        return {
+            'id': self.id,
+            # 'title': self.title,
+            # 'description': self.description,
+            'upper_img': f'/static/{self.id}/upper_img/{self.upper_img}',
+            'bottom_img': f'/static/{self.id}/bottom_img/{self.bottom_img}',
+            'about' : self.about,
+            'video_link': self.video_link,
+            'university_name': self.university_name,
+            'degree': self.degree,
+            "texts": [x.format() for x in self.text_fordegrees],
+
+        }
+
+
+class Text_Fordegrees(db.Model):
+
+    id = db.Column(db.Integer, primary_key=True)
+    fordegree_id = db.Column(db.Integer, db.ForeignKey('degrees.id'))
+    title_or_info = db.Column(db.String, default='info')
+    text = db.Column(db.Text, nullable=False)
+
+
+    def format(self):
+        return {
+
+            "id": self.id,
+            "fordegree_id":self.fordegree_id,
+            "title":self.title_or_info,
+            "text":self.text,
+        }
+
+from flask_login import UserMixin
+
+class AdminFlask(db.Model, UserMixin):
+    id = db.Column(db.Integer, primary_key=True)
+    admin_name = db.Column(db.String(50), nullable=False, unique=True)
+    password = db.Column(db.String(50), nullable=False)
+
+
+class NewsPage(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    img = db.Column(db.Text)
+    title = db.Column(db.Text)
+    desc =  db.Column(db.Text)
+
+    def format(self):
+        cards = News2.query.all()
+        return {
+            'id': self.id,
+            'img': f'/news_page/{self.id}/{self.img}',
+            'title': self.title,
+            'desc': self.desc,
+            'cards': [x.format2() for x in cards]
+        }
+
+
+class News2(db.Model):
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    upper_img = db.Column(db.Text)
+    bottom_img = db.Column(db.Text)
+    about = db.Column(db.Text)
+    video_link = db.Column(db.Text)
+    name = db.Column(db.Text)
+    text_fornews = db.relationship('Text_ForNews', backref='text_news', lazy=True, cascade="all, delete-orphan")
+
+    def format(self, cards):
+
+        return {
+            'id': self.id,
+            'upper_img': f'/card/{self.id}/{self.upper_img}',
+            'bottom_img': f'/card/{self.id}/{self.bottom_img}',
+            'about': self.about,
+            'video_link': self.video_link,
+            'name': self.name,
+            "texts": [x.format() for x in self.text_fornews],
+            'recommend': [x.format2() for x in cards]
+        }
+
+
+    def format2(self):
+
+        return {
+            'id': self.id,
+            'upper_img': f'/card/{self.id}/{self.upper_img}',
+            'bottom_img': f'/card/{self.id}/{self.bottom_img}',
+            'about': self.about,
+            'video_link': self.video_link,
+            'name': self.name,
+            "texts": [x.format() for x in self.text_fornews],
+
+        }
+
+class Text_ForNews(db.Model):
+
+    id = db.Column(db.Integer, primary_key=True)
+    fordegree_id = db.Column(db.Integer, db.ForeignKey('news2.id'))
+    title_or_info = db.Column(db.String, default='info')
+    text = db.Column(db.Text, nullable=False)
+
+
+    def format(self):
+
+        return {
+
+            "id": self.id,
+            "fordegree_id":self.fordegree_id,
+            "title":self.title_or_info,
+            "text":self.text,
+
+
         }
