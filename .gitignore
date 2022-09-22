@@ -3,3 +3,4 @@ uploads/
 logs/
 venv/
 flask_machine/
+static/
