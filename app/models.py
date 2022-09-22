@@ -771,6 +771,9 @@ class Education_type_foreign(db.Model):
             'name': self.name,
             "admissions_foreign": [x.format() for x in self.admissions_foreign]
         }
+    
+    def __repr__(self) -> str:
+        return '%s'%self.name
 
 class About_Page(db.Model):
     __tablename__ = 'about_page'
@@ -892,7 +895,9 @@ class Faculty_foreign(db.Model):
             "university_id" : self.university_id,
             "admissions_foreign" : [x.format() for x in self.admissions_foreign]
         }
-    
+    def __repr__(self) -> str:
+        return '%s'%self.name
+
     def syre_format(self):
         return{
             "id" : self.id,
@@ -974,6 +979,9 @@ class Gender_foreign(db.Model):
             "id" : self.id,
             "name" : self.name
         }
+    
+    def __repr__(self) -> str:
+        return '%s'%self.name
 
 
 class Billboard(db.Model):

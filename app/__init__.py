@@ -3,6 +3,15 @@ from flask import *
 from flask_admin import Admin
 from flask_admin.contrib.sqla import ModelView
 
+class MicroBlogModelView(ModelView):
+    column_display_pk = True
+    can_create = False
+    can_delete = False
+    can_edit = False
+    can_export = True
+    export_types = ['xlsx', 'csv']
+
+
 from .exts import db
 # import sentry_sdk
 # from sentry_sdk.integrations.flask import FlaskIntegration
@@ -47,32 +56,32 @@ def create_app(testing=False):
         #db.drop_all()
         #db.create_all()
     admin = Admin(app,name='microblog', template_mode='bootstrap4')
-    admin.add_view(ModelView(User, db.session))
-    admin.add_view(ModelView(Role_meta, db.session))
-    admin.add_view(ModelView(Role, db.session))
-    admin.add_view(ModelView(UserMeta, db.session))
-    admin.add_view(ModelView(Admission, db.session))
-    admin.add_view(ModelView(Adm_Attach, db.session))
-    admin.add_view(ModelView(University_foreign, db.session))
-    admin.add_view(ModelView(Text_foreign, db.session))
-    admin.add_view(ModelView(Faculty_foreign, db.session))
-    admin.add_view(ModelView(Faculty, db.session))
-    admin.add_view(ModelView(Faculty_meta, db.session))
-    admin.add_view(ModelView(Speciality, db.session))
-    admin.add_view(ModelView(Qualification, db.session))
-    admin.add_view(ModelView(Education_type, db.session))
-    admin.add_view(ModelView(Education_type_foreign, db.session))
-    admin.add_view(ModelView(Education_form, db.session))
-    admin.add_view(ModelView(Nationality, db.session))
-    admin.add_view(ModelView(Gender, db.session))
-    admin.add_view(ModelView(Country, db.session))
-    admin.add_view(ModelView(Region, db.session))
-    admin.add_view(ModelView(District, db.session))
-    admin.add_view(ModelView(Uni_Attach_Foreign, db.session))
-    admin.add_view(ModelView(Adm_Attach_Foreign, db.session))
-    admin.add_view(ModelView(Admission_Foreign, db.session))
-    admin.add_view(ModelView(Gender_foreign, db.session))
-    admin.add_view(ModelView(Billboard, db.session))
+    admin.add_view(MicroBlogModelView(User, db.session))
+    admin.add_view(MicroBlogModelView(Role_meta, db.session))
+    admin.add_view(MicroBlogModelView(Role, db.session))
+    admin.add_view(MicroBlogModelView(UserMeta, db.session))
+    admin.add_view(MicroBlogModelView(Admission, db.session))
+    admin.add_view(MicroBlogModelView(Adm_Attach, db.session))
+    admin.add_view(MicroBlogModelView(University_foreign, db.session))
+    admin.add_view(MicroBlogModelView(Text_foreign, db.session))
+    admin.add_view(MicroBlogModelView(Faculty_foreign, db.session))
+    admin.add_view(MicroBlogModelView(Faculty, db.session))
+    admin.add_view(MicroBlogModelView(Faculty_meta, db.session))
+    admin.add_view(MicroBlogModelView(Speciality, db.session))
+    admin.add_view(MicroBlogModelView(Qualification, db.session))
+    admin.add_view(MicroBlogModelView(Education_type, db.session))
+    admin.add_view(MicroBlogModelView(Education_type_foreign, db.session))
+    admin.add_view(MicroBlogModelView(Education_form, db.session))
+    admin.add_view(MicroBlogModelView(Nationality, db.session))
+    admin.add_view(MicroBlogModelView(Gender, db.session))
+    admin.add_view(MicroBlogModelView(Country, db.session))
+    admin.add_view(MicroBlogModelView(Region, db.session))
+    admin.add_view(MicroBlogModelView(District, db.session))
+    admin.add_view(MicroBlogModelView(Uni_Attach_Foreign, db.session))
+    admin.add_view(MicroBlogModelView(Adm_Attach_Foreign, db.session))
+    admin.add_view(MicroBlogModelView(Admission_Foreign, db.session))
+    admin.add_view(MicroBlogModelView(Gender_foreign, db.session))
+    admin.add_view(MicroBlogModelView(Billboard, db.session))
 
     
     return app
