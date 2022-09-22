@@ -5,22 +5,25 @@ from app.models import *
 from app.flask__admin import createAdmin2
 
 
-if __name__ == "__main__":
+def user_admin():
+    u = User(
+        username='admin',
+        phone='998999999999'
+    )
+    db.session.add(u)
+    u.set_password('6569321John0604')
+    db.session.commit()
+    print('UserAdmin created!')
 
+
+if __name__ == "__main__":
     app = create_app()
     with app.app_context():
         db.create_all()
         admin = AdminFlask.query.filter_by(admin_name='admin').first()
         u = User.query.filter_by(username='admin').first()
         if not u:
-            u = User(
-                username='admin',
-                phone='998999999999'
-            )
-            db.session.add(u)
-            u.set_password('6569321John0604')
-            db.session.commit()
-            print('UserAdmin created!')
+            user_admin()
         if admin:
             app.run(debug=True, host="0.0.0.0", port=5050)
 
