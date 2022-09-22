@@ -5,63 +5,68 @@ from sqlalchemy.orm import relationship
 import datetime
 from werkzeug.security import check_password_hash, generate_password_hash
 
+
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(), unique=True, nullable=False)
     password = db.Column(db.String(200), nullable=False)
-    phone = db.Column(db.String(20),  nullable=False)
-    last_login = db.Column(db.DateTime, nullable = True)
+    phone = db.Column(db.String(20), nullable=False)
+    last_login = db.Column(db.DateTime, nullable=True)
     email = db.Column(db.String)
     passport_number = db.Column(db.String)
     pnfl = db.Column(db.String)
 
-
-    verify_code = db.Column(db.String, nullable = True)
+    verify_code = db.Column(db.String, nullable=True)
 
     created_time = db.Column(db.DateTime, default=datetime.datetime.now)
 
-    role_metas = relationship("Role_meta", cascade = "all,delete", backref = "user", lazy = True)
+    role_metas = relationship("Role_meta", cascade="all,delete", backref="user", lazy=True)
     admissions = relationship("Admission", cascade="all,delete", backref="user")
     foreign_admissions = relationship("Admission_Foreign", cascade="all,delete", backref="user")
     metas = relationship("UserMeta", cascade="all,delete", backref="user")
+
     def set_password(self, password):
         self.password = generate_password_hash(password)
+
     def check_password(self, password):
         return check_password_hash(self.password, password)
+
     def format(self):
         return {
             'username': self.username,
             'phone': self.phone,
             'last_login': self.last_login,
             'created_time': self.created_time,
-            'attributes': [ {
+            'attributes': [{
                 'key': meta.format()['key'],
                 'value': meta.format()['value'],
-            } for meta in self.metas ]
+            } for meta in self.metas]
         }
+
     def __repr__(self) -> str:
-        return "%s"%self.username
+        return "%s" % self.username
+
 
 class Role_meta(db.Model):
     __tablename__ = 'role_meta'
     id = db.Column(db.Integer, primary_key=True)
-    role_id = db.Column(db.Integer, db.ForeignKey('role.id'), nullable = False)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id') ,nullable = False)
+    role_id = db.Column(db.Integer, db.ForeignKey('role.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
     def format(self):
-        return{
+        return {
             "id": self.id,
-            "role_id" : self.role_id,
-            "role_name" : self.role.name,
-            "user_id" : self.user_id
+            "role_id": self.role_id,
+            "role_name": self.role.name,
+            "user_id": self.user_id
         }
-
 
     def login(self):
-        return{
+        return {
             "id": self.id,
-            "name" : self.role.name,
+            "name": self.role.name,
         }
+
 
 class Role(db.Model):
     __tablename__ = 'role'
@@ -69,13 +74,14 @@ class Role(db.Model):
     name = db.Column(db.String, nullable=False)
     destination = db.Column(db.String, nullable=True)
 
-    role_meta = relationship("Role_meta", cascade = "delete,all", backref = "role", lazy = True)
+    role_meta = relationship("Role_meta", cascade="delete,all", backref="role", lazy=True)
 
     def format(self):
-        return{
-            "id" : self.id,
-            "name" : self.name,
+        return {
+            "id": self.id,
+            "name": self.name,
         }
+
 
 class Admission(db.Model):
     # adm status 1 = waitlist, 2 = accepted, 3 = refused , 4 = registrating
@@ -87,7 +93,7 @@ class Admission(db.Model):
     birthdate = db.Column(db.Date, nullable=True)
     pnfl = db.Column(db.String, unique=True, nullable=True)
     dtm = db.Column(db.String, unique=True, nullable=True)
-    passport_number = db.Column(db.String, nullable = True)
+    passport_number = db.Column(db.String, nullable=True)
     passport_expiry = db.Column(db.Date, nullable=True)
     phone = db.Column(db.String, nullable=False)
     phone_a = db.Column(db.String, nullable=True)
@@ -96,9 +102,9 @@ class Admission(db.Model):
     faculty_meta_id = db.Column(db.Integer, db.ForeignKey('faculty_meta.id'), nullable=True)
 
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
-    
+
     gender_id = db.Column(db.Integer, db.ForeignKey("gender.id"), nullable=True)
-    
+
     nationality = db.Column(db.String, nullable=True)
     country_birth = db.Column(db.String, nullable=True)
     country_permanent = db.Column(db.String, nullable=True)
@@ -106,13 +112,13 @@ class Admission(db.Model):
     accept_deadline = db.Column(db.String, nullable=True)
     aplication_type = db.Column(db.String, nullable=True)
     education_form_id = db.Column(db.Integer, db.ForeignKey("education_form.id"), nullable=True)
-    
+
     adress1 = db.Column(db.String, nullable=True)
     adress2 = db.Column(db.String, nullable=True)
     region = db.Column(db.String, nullable=True)
     district = db.Column(db.String, nullable=True)
     post_index = db.Column(db.String, nullable=True)
-    
+
     post_adress1 = db.Column(db.String, nullable=True)
     post_adress2 = db.Column(db.String, nullable=True)
     post_region = db.Column(db.String, nullable=True)
@@ -139,13 +145,12 @@ class Admission(db.Model):
             'step': self.register_step,
         }
 
-    
     def notification_2(self):
         return {
             "id": self.id,
             'sts': self.status,
             "username": self.user.username,
-            "password" : self.user.password,
+            "password": self.user.password,
         }
 
     def notification_3(self):
@@ -154,6 +159,7 @@ class Admission(db.Model):
             'sts': self.status,
             "comment": self.comment,
         }
+
     def format(self):
         return {
             'id': self.id,
@@ -172,34 +178,35 @@ class Admission(db.Model):
             "comment": self.comment,
             "register_step": self.register_step,
             "user_id": self.user_id,
-            "nationality" : self.nationality,
-            "birthdate" : self.birthdate,
-            "gender_id" : self.gender_id,
-            "country_birth" : self.country_birth,
-            "country_permanent" : self.country_permanent,
-            "current_country" : self.current_country,
-            "accept_deadline" : self.accept_deadline,
-            "aplication_type" : self.aplication_type,
-            "education_form_id" : self.education_form_id,
-            "education_type_id" : self.education_type_id,
-            'adress1' : self.adress1,
-            'adress2' : self.adress2,
-            'region' : self.region,
-            'district' : self.district,
-            'post_index' : self.post_index,
-            'post_adress1' : self.post_adress1,
-            'post_adress2' : self.post_adress2,
-            'post_region' : self.post_region,
-            'post_district' : self.post_district,
-            'post_index_2' : self.post_index_2,
-            'school' : self.school,
-            'qualification' : self.qualification,
-            'qualification2' : self.qualification2,
-            'GPA' : self.GPA,
-            'faculty_id' : self.faculty_id,
-            'status' : self.status,
+            "nationality": self.nationality,
+            "birthdate": self.birthdate,
+            "gender_id": self.gender_id,
+            "country_birth": self.country_birth,
+            "country_permanent": self.country_permanent,
+            "current_country": self.current_country,
+            "accept_deadline": self.accept_deadline,
+            "aplication_type": self.aplication_type,
+            "education_form_id": self.education_form_id,
+            "education_type_id": self.education_type_id,
+            'adress1': self.adress1,
+            'adress2': self.adress2,
+            'region': self.region,
+            'district': self.district,
+            'post_index': self.post_index,
+            'post_adress1': self.post_adress1,
+            'post_adress2': self.post_adress2,
+            'post_region': self.post_region,
+            'post_district': self.post_district,
+            'post_index_2': self.post_index_2,
+            'school': self.school,
+            'qualification': self.qualification,
+            'qualification2': self.qualification2,
+            'GPA': self.GPA,
+            'faculty_id': self.faculty_id,
+            'status': self.status,
             'attachments': [x.format() for x in self.attaches]
         }
+
 
 class Adm_Attach(db.Model):
     __tablename__ = "adm_attach"
@@ -207,51 +214,57 @@ class Adm_Attach(db.Model):
     admission_id = db.Column(db.Integer, db.ForeignKey('admission.id'), nullable=False)
     path = db.Column(db.String(200), nullable=False)
     info = db.Column(db.String(200), nullable=True)
+
     def format(self):
         return {
-            'id' : self.id,
+            'id': self.id,
             'info': self.info,
-            'path' : self.path,
-            'ext': self.path.rsplit('.',1)[-1]
-    }
+            'path': self.path,
+            'ext': self.path.rsplit('.', 1)[-1]
+        }
+
 
 class Faculty_meta(db.Model):
     __tablename__ = "faculty_meta"
-    id = db.Column(db.Integer, primary_key = True)
-    faculty_id = db.Column(db.Integer,db.ForeignKey("faculty.id"),nullable = False)
-    speciality_id = db.Column(db.Integer,db.ForeignKey("speciality.id"),nullable = False)
-    admissions = relationship("Admission", cascade = "all,delete", backref = "faculty_meta", lazy = True)
-    
+    id = db.Column(db.Integer, primary_key=True)
+    faculty_id = db.Column(db.Integer, db.ForeignKey("faculty.id"), nullable=False)
+    speciality_id = db.Column(db.Integer, db.ForeignKey("speciality.id"), nullable=False)
+    admissions = relationship("Admission", cascade="all,delete", backref="faculty_meta", lazy=True)
+
     def format(self):
-        s = db.session.query(Faculty, Speciality.name, Education_type.name).filter(Faculty.id == self.faculty_id, Speciality.id == self.speciality_id).join(Education_type).filter(Education_type.id == Faculty.education_type_id).first()
-        return{
-            'id' : self.id,
-            'faculty_id' : self.faculty_id,
-            'speciality_id' : self.speciality_id,
-            "faculty_name" : s[0].name,
-            "speciality_name" : s[1],
-            "education_type_id" : s[0].education_type_id,
-            "education_type_name" : s[2],
-            
+        s = db.session.query(Faculty, Speciality.name, Education_type.name).filter(Faculty.id == self.faculty_id,
+                                                                                   Speciality.id == self.speciality_id).join(
+            Education_type).filter(Education_type.id == Faculty.education_type_id).first()
+        return {
+            'id': self.id,
+            'faculty_id': self.faculty_id,
+            'speciality_id': self.speciality_id,
+            "faculty_name": s[0].name,
+            "speciality_name": s[1],
+            "education_type_id": s[0].education_type_id,
+            "education_type_name": s[2],
+
         }
-    
+
+
 class Faculty(db.Model):
     __tablename__ = 'faculty'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String, nullable=False)
     code = db.Column(db.String, nullable=False)
     education_type_id = db.Column(db.Integer, db.ForeignKey("education_type.id"))
-    
-    faculty_metas = relationship("Faculty_meta", cascade = "all,delete", backref = "faculty", lazy= True)
-    
+
+    faculty_metas = relationship("Faculty_meta", cascade="all,delete", backref="faculty", lazy=True)
+
     def format(self):
-        s = db.session.query(Education_type.name,Education_type.id).filter(Education_type.id == self.education_type_id).first()
+        s = db.session.query(Education_type.name, Education_type.id).filter(
+            Education_type.id == self.education_type_id).first()
         return {
-            "id" : self.id,
-            "name" : self.name,
-            "code" : self.code,
-            "education_type_name" : s[0],
-            "education_type_id" : s[1],
+            "id": self.id,
+            "name": self.name,
+            "code": self.code,
+            "education_type_name": s[0],
+            "education_type_id": s[1],
         }
 
     def group_load(self):
@@ -260,13 +273,13 @@ class Faculty(db.Model):
         for g_l in gr_l:
             l_h += g_l['lessons_hours']
         return {
-            "id" : self.id,
-            "faculty" : self.name,
+            "id": self.id,
+            "faculty": self.name,
             "group_count": len(self.groups),
-            "lessons_hours" :  l_h,
-            "group" : gr_l
+            "lessons_hours": l_h,
+            "group": gr_l
         }
-    
+
     def group_load_2(self, academic_program_id, academic_plan_id):
         gr_l = [x.group_load(academic_plan_id) for x in self.groups]
         ret_groups = []
@@ -276,48 +289,50 @@ class Faculty(db.Model):
                 l_h += g_l['lessons_hours']
                 ret_groups.append(g_l)
         return {
-            "fac_id" : self.id,
-            "faculty_name" : self.name,
+            "fac_id": self.id,
+            "faculty_name": self.name,
             "group_count": len(ret_groups),
-            "lessons_hours" :  l_h,
-            "groups" : ret_groups
+            "lessons_hours": l_h,
+            "groups": ret_groups
         }
 
     def order_category(self):
         return [x.format() for x in self.departs]
-    
+
     def edm(self):
         return {
-            "faculty_id" : self.id,
-            "name" : self.name,
-            "code" : self.code,
-            "fac_groups" : [x.edm() for x in self.groups]
+            "faculty_id": self.id,
+            "name": self.name,
+            "code": self.code,
+            "fac_groups": [x.edm() for x in self.groups]
         }
+
     def __repr__(self) -> str:
-        return "%s"%self.name
+        return "%s" % self.name
+
 
 class Speciality(db.Model):
     __tablename__ = "speciality"
-    id = db.Column(db.Integer, primary_key = True)
+    id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String)
     code = db.Column(db.String)
-    
 
-    faculty_metas = relationship("Faculty_meta", cascade = "all,delete", backref = "speciality", lazy = True)
-    
-    qualifications = relationship("Qualification", backref = "speciality", lazy = True)
+    faculty_metas = relationship("Faculty_meta", cascade="all,delete", backref="speciality", lazy=True)
+
+    qualifications = relationship("Qualification", backref="speciality", lazy=True)
 
     def format(self):
-        return{
-            "id" : self.id,
-            "faculty_metas" : [x.format() for x in self.faculty_metas],
-            "name" : self.name,
-            "code" : self.code,
+        return {
+            "id": self.id,
+            "faculty_metas": [x.format() for x in self.faculty_metas],
+            "name": self.name,
+            "code": self.code,
         }
+
 
 class Qualification(db.Model):
     __tablename__ = "qualification"
-    id = db.Column(db.Integer, primary_key = True)
+    id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String)
     code = db.Column(db.String)
 
@@ -330,19 +345,20 @@ class Qualification(db.Model):
             'speciality_id': self.speciality_id,
         }
 
+
 class Education_type(db.Model):
     __tablename__ = "education_type"
-    id = db.Column(db.Integer, primary_key = True)
+    id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String)
-    
-    faculties = relationship("Faculty", backref = "education_type", lazy = True)
+
+    faculties = relationship("Faculty", backref="education_type", lazy=True)
 
     def read(self):
         return {
             'id': self.id,
             'name': self.name,
         }
-    
+
     def format(self):
         return {
             'id': self.id,
@@ -350,12 +366,14 @@ class Education_type(db.Model):
             "faculties": [x.format() for x in self.faculties]
         }
 
+
 class Education_form(db.Model):
     __tablename__ = "education_form"
-    id = db.Column(db.Integer, primary_key = True)
+    id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String)
-    
-    admissions = relationship("Admission", cascade = "all,delete", backref = "education_form", lazy = True)
+
+    admissions = relationship("Admission", cascade="all,delete", backref="education_form", lazy=True)
+
     def format(self):
         return {
             'id': self.id,
@@ -365,67 +383,75 @@ class Education_form(db.Model):
 
 class Nationality(db.Model):
     __tablename__ = "nationality"
-    id = db.Column(db.Integer, primary_key = True)
+    id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String)
-    
+
     def format(self):
         return {
             'id': self.id,
             'name': self.name,
         }
 
+
 class Gender(db.Model):
     __tablename__ = 'gender'
-    id = db.Column(db.Integer, primary_key = True)
+    id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String)
 
-    admissions = relationship("Admission", cascade = "all,delete", backref = "gender", lazy =True)
+    admissions = relationship("Admission", cascade="all,delete", backref="gender", lazy=True)
+
     def format(self):
-        return{
-            "id" : self.id,
-            "name" : self.name
+        return {
+            "id": self.id,
+            "name": self.name
         }
+
 
 class Country(db.Model):
     __tablename__ = 'country'
-    id = db.Column(db.Integer, primary_key = True)
+    id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String)
 
     def format(self):
-        return{
-            "id" : self.id,
-            "name" : self.name
+        return {
+            "id": self.id,
+            "name": self.name
         }
+
 
 class Region(db.Model):
     __tablename__ = 'region'
-    id = db.Column(db.Integer, primary_key = True)
+    id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String)
-    districts = relationship('District', cascade = "all,delete", backref = "region", lazy = True)
+    districts = relationship('District', cascade="all,delete", backref="region", lazy=True)
+
     def format(self):
-        return{
-            "id" : self.id,
-            "name" : self.name
+        return {
+            "id": self.id,
+            "name": self.name
         }
+
 
 class District(db.Model):
     __tablename__ = 'district'
-    id = db.Column(db.Integer, primary_key = True)
+    id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String)
-    reg_id = db.Column(db.Integer, db.ForeignKey('region.id'), nullable = False)
+    reg_id = db.Column(db.Integer, db.ForeignKey('region.id'), nullable=False)
+
     def format(self):
-        return{
-            "id" : self.id,
-            "name" : self.name,
-            "reg_id" : self.reg_id,
+        return {
+            "id": self.id,
+            "name": self.name,
+            "reg_id": self.reg_id,
         }
+
 
 class UserMeta(db.Model):
     __tablename__ = 'user_meta'
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
-    key = db.Column(db.String(80),  nullable=False)
-    value = db.Column(db.String(200),  nullable=False)
+    key = db.Column(db.String(80), nullable=False)
+    value = db.Column(db.String(200), nullable=False)
 
     def format(self):
         return {
@@ -477,20 +503,22 @@ class UserMeta(db.Model):
 #         }
 
 class News(db.Model):
-    __table_args__ = {'extend_existing': True} 
+    __table_args__ = {'extend_existing': True}
     id = db.Column(db.Integer, primary_key=True)
     title_news = db.Column(db.String(120), nullable=False)
     picture_news = db.Column(db.String(120), nullable=False)
     date_posted = db.Column(db.DateTime, default=datetime.datetime.now())
+
     # universities = db.relationship('Universities', backref='university')
     def format(self):
         return {
             'id': self.id,
             'title_news': self.title_news,
             'picture': self.picture_news,
-           'date_posted': self.date_posted
+            'date_posted': self.date_posted
 
         }
+
 
 # class Apllication_univer(db.Model):
 #     id = db.Column(db.Integer, primary_key=True)
@@ -558,12 +586,11 @@ class Admission_Foreign(db.Model):
     birthdate = db.Column(db.Date, nullable=True)
     pnfl = db.Column(db.String, unique=True, nullable=True)
     dtm = db.Column(db.String, unique=True, nullable=True)
-    passport_number = db.Column(db.String, nullable = True)
+    passport_number = db.Column(db.String, nullable=True)
     passport_expiry = db.Column(db.Date, nullable=True)
     phone = db.Column(db.String, nullable=False)
     phone_a = db.Column(db.String, nullable=True)
     email = db.Column(db.String, unique=True, nullable=True)
-
 
     faculty_id = db.Column(db.Integer, db.ForeignKey('faculty_foreign.id'), nullable=True)
 
@@ -576,13 +603,13 @@ class Admission_Foreign(db.Model):
     accept_deadline = db.Column(db.String, nullable=True)
     aplication_type = db.Column(db.String, nullable=True)
     education_type_id = db.Column(db.Integer, db.ForeignKey("education_type_foreign.id"), nullable=True)
-    
+
     adress1 = db.Column(db.String, nullable=True)
     adress2 = db.Column(db.String, nullable=True)
     region = db.Column(db.String, nullable=True)
     district = db.Column(db.String, nullable=True)
     post_index = db.Column(db.String, nullable=True)
-    
+
     post_adress1 = db.Column(db.String, nullable=True)
     post_adress2 = db.Column(db.String, nullable=True)
     post_region = db.Column(db.String, nullable=True)
@@ -610,13 +637,12 @@ class Admission_Foreign(db.Model):
             'step': self.register_step,
         }
 
-    
     def notification_2(self):
         return {
             "id": self.id,
             'sts': self.status,
             "username": User.query.get(self.user_id).username,
-            "password" : User.query.get(self.user_id).password,
+            "password": User.query.get(self.user_id).password,
             "comment": self.comment,
         }
 
@@ -646,45 +672,45 @@ class Admission_Foreign(db.Model):
             "register_step": self.register_step,
             "user_id": self.user_id,
             "gender_id": self.gender_id,
-            "qualification_start": str(self.qualification_start),            
+            "qualification_start": str(self.qualification_start),
             "qualification_end": str(self.qualification_end),
-            "nationality" : self.nationality,
-            "birthdate" : self.birthdate,
-            "country_birth" : self.country_birth,
-            "country_permanent" : self.country_permanent,
-            "current_country" : self.current_country,
-            "accept_deadline" : self.accept_deadline,
-            "aplication_type" : self.aplication_type,
-            "education_type_id" : self.education_type_id,
-            "education_type_name" : self.education_type_foreign.name if self.education_type_foreign else None,
-            'adress1' : self.adress1,
-            'adress2' : self.adress2,
-            'region' : self.region,
-            'district' : self.district,
-            'post_index' : self.post_index,
-            'post_adress1' : self.post_adress1,
-            'post_adress2' : self.post_adress2,
-            'post_region' : self.post_region,
-            'post_district' : self.post_district,
-            'post_index2' : self.post_index_2,
-            'school' : self.school,
-            'qualification' : self.qualification,
-            'qualification2' : self.qualification2,
-            'GPA' : self.GPA,
-            'faculty_id' : self.faculty_id,
-            'faculty_name' : self.faculty_foreign.name if self.faculty_foreign else None,
-            'status' : self.status,
+            "nationality": self.nationality,
+            "birthdate": self.birthdate,
+            "country_birth": self.country_birth,
+            "country_permanent": self.country_permanent,
+            "current_country": self.current_country,
+            "accept_deadline": self.accept_deadline,
+            "aplication_type": self.aplication_type,
+            "education_type_id": self.education_type_id,
+            "education_type_name": self.education_type_foreign.name if self.education_type_foreign else None,
+            'adress1': self.adress1,
+            'adress2': self.adress2,
+            'region': self.region,
+            'district': self.district,
+            'post_index': self.post_index,
+            'post_adress1': self.post_adress1,
+            'post_adress2': self.post_adress2,
+            'post_region': self.post_region,
+            'post_district': self.post_district,
+            'post_index2': self.post_index_2,
+            'school': self.school,
+            'qualification': self.qualification,
+            'qualification2': self.qualification2,
+            'GPA': self.GPA,
+            'faculty_id': self.faculty_id,
+            'faculty_name': self.faculty_foreign.name if self.faculty_foreign else None,
+            'status': self.status,
             'attachments': [x.format() for x in self.attaches]
         }
 
     def format2(self):
         return {
-            "id" : self.id,
-            "name" : self.name,
-            "surname" : self.surname,
-            "email" : self.email,
-            "phone" : self.phone,
-            "status" : self.status
+            "id": self.id,
+            "name": self.name,
+            "surname": self.surname,
+            "email": self.email,
+            "phone": self.phone,
+            "status": self.status
         }
 
     def excel(self):
@@ -703,25 +729,25 @@ class Admission_Foreign(db.Model):
             "status": 'Rejected' if self.status == 2 else 'Accepted',
             "comment_why_rejected": self.comment,
             "gender": self.gender_foreign.name,
-            "qualification_start": str(self.qualification_start),            
+            "qualification_start": str(self.qualification_start),
             "qualification_end": str(self.qualification_end),
-            "nationality" : self.nationality,
-            "birthdate" : self.birthdate,
-            "country_birth" : self.country_birth,
-            "country_permanent" : self.country_permanent,
-            "current_country" : self.current_country,
-            'faculty' : self.faculty_foreign.name,
-            "accept_deadline" : self.accept_deadline,
-            'program_type' : self.faculty_foreign.code,
-            'adress1' : self.adress1,
-            'adress2' : self.adress2,
-            'region' : self.region,
-            'district' : self.district,
-            'school' : self.school,
-            'qualification' : self.qualification,
-            'qualification2' : self.qualification2,
-            'GPA' : self.GPA,
-            
+            "nationality": self.nationality,
+            "birthdate": self.birthdate,
+            "country_birth": self.country_birth,
+            "country_permanent": self.country_permanent,
+            "current_country": self.current_country,
+            'faculty': self.faculty_foreign.name,
+            "accept_deadline": self.accept_deadline,
+            'program_type': self.faculty_foreign.code,
+            'adress1': self.adress1,
+            'adress2': self.adress2,
+            'region': self.region,
+            'district': self.district,
+            'school': self.school,
+            'qualification': self.qualification,
+            'qualification2': self.qualification2,
+            'GPA': self.GPA,
+
         }
 
 
@@ -732,17 +758,19 @@ class Adm_Attach_Foreign(db.Model):
     university_foreign_id = db.Column(db.Integer, db.ForeignKey('university_foreign.id'), nullable=False)
     path = db.Column(db.String(200), nullable=False)
     info = db.Column(db.String(200), nullable=True)
+
     def format(self):
         return {
-            'id' : self.id,
-            'admission_foreign_id' : self.admission_foreign_id,
+            'id': self.id,
+            'admission_foreign_id': self.admission_foreign_id,
             'info': self.info,
-            'path' : self.path,
+            'path': self.path,
 
-            'filename' : self.path.rsplit('.',1)[-2].rsplit('\\',1)[-1],
+            'filename': self.path.rsplit('.', 1)[-2].rsplit('\\', 1)[-1],
 
-            'ext': self.path.rsplit('.',1)[-1]
-    }
+            'ext': self.path.rsplit('.', 1)[-1]
+        }
+
 
 class Uni_Attach_Foreign(db.Model):
     __tablename__ = "uni_attach_foreign"
@@ -750,22 +778,25 @@ class Uni_Attach_Foreign(db.Model):
     university_foreign_id = db.Column(db.Integer, db.ForeignKey('university_foreign.id'), nullable=False)
     path = db.Column(db.String(200), nullable=False)
     info = db.Column(db.String(200), nullable=True)
+
     def format(self):
         return {
-            'id' : self.id,
-            'university_foreign_id' : self.university_foreign_id,
+            'id': self.id,
+            'university_foreign_id': self.university_foreign_id,
             'info': self.info,
-            'path' : self.path,
-            'ext': self.path.rsplit('.',1)[-1]
-    }
+            'path': self.path,
+            'ext': self.path.rsplit('.', 1)[-1]
+        }
+
 
 class Education_type_foreign(db.Model):
     __tablename__ = "education_type_foreign"
-    id = db.Column(db.Integer, primary_key = True)
+    id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String)
 
     university_id = db.Column(db.Integer, db.ForeignKey('university_foreign.id'))
-    admissions_foreign = relationship("Admission_Foreign", cascade = "all,delete", backref = "education_type_foreign", lazy = True)
+    admissions_foreign = relationship("Admission_Foreign", cascade="all,delete", backref="education_type_foreign",
+                                      lazy=True)
 
     def format(self):
         return {
@@ -773,6 +804,7 @@ class Education_type_foreign(db.Model):
             'name': self.name,
             "admissions_foreign": [x.format() for x in self.admissions_foreign]
         }
+
 
 class About_Page(db.Model):
     __tablename__ = 'about_page'
@@ -786,13 +818,14 @@ class About_Page(db.Model):
 
     def format(self):
         return {
-            "photo1" : self.photo1,
-            "photo2" : self.photo2,
-            "desc1" : self.desc1,
-            "desc2" : self.desc2,
-            "title" : self.title,
-            "link" : self.link
+            "photo1": self.photo1,
+            "photo2": self.photo2,
+            "desc1": self.desc1,
+            "desc2": self.desc2,
+            "title": self.title,
+            "link": self.link
         }
+
 
 class Branch(db.Model):
     __tablename__ = 'branch'
@@ -811,19 +844,20 @@ class Branch(db.Model):
 
     def format(self):
         return {
-            "id" : self.id,
-            "name" : self.name,
-            "photo1" : self.photo1,
-            "photo2" : self.photo2,
-            "logo" : self.logo,
-            "desc" : self.desc,
-            "rector_photo" : self.rector_photo,
-            "rector_name" : self.rector_name,
-            "rector_reception" : self.rector_reception,
-            "rector_address" : self.rector_address,
-            "rector_phone" : self.rector_phone,
-            "rector_email" : self.rector_email
+            "id": self.id,
+            "name": self.name,
+            "photo1": self.photo1,
+            "photo2": self.photo2,
+            "logo": self.logo,
+            "desc": self.desc,
+            "rector_photo": self.rector_photo,
+            "rector_name": self.rector_name,
+            "rector_reception": self.rector_reception,
+            "rector_address": self.rector_address,
+            "rector_phone": self.rector_phone,
+            "rector_email": self.rector_email
         }
+
 
 class Programme(db.Model):
     __tablename__ = 'programme'
@@ -831,16 +865,18 @@ class Programme(db.Model):
     name = db.Column(db.String, nullable=False)
     photo = db.Column(db.String, nullable=False)
     desc = db.Column(db.String, nullable=False)
-    faculty_datas = relationship("Faculty_Data", cascade="all,delete", backref="programme", passive_deletes=True, lazy=True)
+    faculty_datas = relationship("Faculty_Data", cascade="all,delete", backref="programme", passive_deletes=True,
+                                 lazy=True)
 
     def format(self):
         return {
-            "id" : self.id,
-            "name" : self.name,
-            "photo" : self.photo,
-            "desc" : self.desc,
-            "count" : len(self.faculty_datas)
+            "id": self.id,
+            "name": self.name,
+            "photo": self.photo,
+            "desc": self.desc,
+            "count": len(self.faculty_datas)
         }
+
 
 class Faculty_Data(db.Model):
     __tablename__ = 'faculty_data'
@@ -850,18 +886,20 @@ class Faculty_Data(db.Model):
     desc = db.Column(db.String, nullable=False)
     link = db.Column(db.String, nullable=False)
     programme_id = db.Column(db.Integer, db.ForeignKey('programme.id', ondelete='CASCADE'))
-    faculty_data_metas = relationship("Faculty_Data_Meta", cascade="all,delete", passive_deletes=True, backref="faculty_data", lazy=True)
+    faculty_data_metas = relationship("Faculty_Data_Meta", cascade="all,delete", passive_deletes=True,
+                                      backref="faculty_data", lazy=True)
 
     def format(self):
         return {
-            "id" : self.id,
-            "name" : self.name,
-            "photo" : self.photo,
-            "desc" : self.desc,
-            "link" : self.link,
-            "programme_id" : self.programme_id,
-            "faculty_data_metas" : [x.format() for x in self.faculty_data_metas]
+            "id": self.id,
+            "name": self.name,
+            "photo": self.photo,
+            "desc": self.desc,
+            "link": self.link,
+            "programme_id": self.programme_id,
+            "faculty_data_metas": [x.format() for x in self.faculty_data_metas]
         }
+
 
 class Faculty_Data_Meta(db.Model):
     __tablename__ = 'faculty_data_meta'
@@ -872,11 +910,12 @@ class Faculty_Data_Meta(db.Model):
 
     def format(self):
         return {
-            "id" : self.id,
-            "faculty_data_id" : self.faculty_data_id,
-            "key" : self.key,
-            "value" : self.value
+            "id": self.id,
+            "faculty_data_id": self.faculty_data_id,
+            "key": self.key,
+            "value": self.value
         }
+
 
 class Faculty_foreign(db.Model):
     __tablename__ = "faculty_foreign"
@@ -885,23 +924,24 @@ class Faculty_foreign(db.Model):
     code = db.Column(db.String, nullable=False)
     university_id = db.Column(db.Integer, db.ForeignKey('university_foreign.id'))
     admissions_foreign = relationship("Admission_Foreign", backref="faculty_foreign", lazy=True)
-    
+
     def format(self):
         return {
-            "id" : self.id,
-            "name" : self.name,
-            "code" : self.code,
-            "university_id" : self.university_id,
-            "admissions_foreign" : [x.format() for x in self.admissions_foreign]
+            "id": self.id,
+            "name": self.name,
+            "code": self.code,
+            "university_id": self.university_id,
+            "admissions_foreign": [x.format() for x in self.admissions_foreign]
         }
-    
+
     def syre_format(self):
-        return{
-            "id" : self.id,
-            "name" : self.name,
-            "code" : self.code,
-            "university_id" : self.university_id
+        return {
+            "id": self.id,
+            "name": self.name,
+            "code": self.code,
+            "university_id": self.university_id
         }
+
 
 class University_foreign(db.Model):
     __tablename__ = "university_foreign"
@@ -917,8 +957,10 @@ class University_foreign(db.Model):
     edu_types_foreign = relationship("Education_type_foreign", backref='university_foreign')
     admissions_foreign = relationship("Admission_Foreign", backref='university_foreign')
     attaches = relationship('Adm_Attach_Foreign', cascade="all,delete", backref='university_foreign', lazy=True)
+
     def __repr__(self) -> str:
-        return "%s"%self.title
+        return "%s" % self.title
+
     def format(self):
         return {
             "id": self.id,
@@ -935,11 +977,12 @@ class University_foreign(db.Model):
 
     def format2(self):
         return {
-            "id" : self.id,
-            "title" : self.title,
+            "id": self.id,
+            "title": self.title,
             "logo": self.logo,
             # "admissions" : [x.format2() for x in self.admissions_foreign]
         }
+
 
 class Text_foreign(db.Model):
     __tablename__ = "text_foreign"
@@ -952,10 +995,11 @@ class Text_foreign(db.Model):
         return {
 
             "id": self.id,
-            "university_id":self.university_id,
-            "title":self.title_or_info,
-            "text":self.text,
+            "university_id": self.university_id,
+            "title": self.title_or_info,
+            "text": self.text,
         }
+
     def format_front(self):
         return {
             "id": self.id,
@@ -964,17 +1008,17 @@ class Text_foreign(db.Model):
         }
 
 
-
 class Gender_foreign(db.Model):
     __tablename__ = 'gender_foreign'
-    id = db.Column(db.Integer, primary_key = True)
+    id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String)
 
-    admissions_foreign = relationship('Admission_Foreign', cascade = "all,delete", backref = "gender_foreign", lazy = True)
+    admissions_foreign = relationship('Admission_Foreign', cascade="all,delete", backref="gender_foreign", lazy=True)
+
     def format(self):
-        return{
-            "id" : self.id,
-            "name" : self.name
+        return {
+            "id": self.id,
+            "name": self.name
         }
 
 
@@ -997,6 +1041,7 @@ class Billboard(db.Model):
 
         }
 
+
 class Post(db.Model):
     __tablename__ = 'post'
     id = db.Column(db.Integer, primary_key=True)
@@ -1018,12 +1063,13 @@ class Post(db.Model):
             'work_activities': [x.format() for x in self.work_activities]
         }
 
+
 class Additional_Info_Meta(db.Model):
     __tablename__ = 'additional_info_meta'
     id = db.Column(db.Integer, primary_key=True)
     post_id = db.Column(db.Integer, db.ForeignKey('post.id'))
-    key = db.Column(db.String,  nullable=False)
-    value = db.Column(db.String,  nullable=False)
+    key = db.Column(db.String, nullable=False)
+    value = db.Column(db.String, nullable=False)
 
     def format(self):
         return {
@@ -1031,13 +1077,14 @@ class Additional_Info_Meta(db.Model):
             'key': self.key,
             'value': self.value
         }
+
 
 class Work_Activity_Meta(db.Model):
     __tablename__ = 'work_activity_meta'
     id = db.Column(db.Integer, primary_key=True)
     post_id = db.Column(db.Integer, db.ForeignKey('post.id'))
-    key = db.Column(db.String,  nullable=False)
-    value = db.Column(db.String,  nullable=False)
+    key = db.Column(db.String, nullable=False)
+    value = db.Column(db.String, nullable=False)
 
     def format(self):
         return {
@@ -1045,6 +1092,7 @@ class Work_Activity_Meta(db.Model):
             'key': self.key,
             'value': self.value
         }
+
 
 class Structure(db.Model):
     __tablename__ = 'structure'
@@ -1059,17 +1107,16 @@ class Structure(db.Model):
 
     def format(self):
         return {
-            'id' : self.id,
-            'role' : self.role,
-            'photo' : self.photo,
-            'fullname' : self.fullname,
-            'desc' : self.desc,
-            'email' : self.email,
-            'phone' : self.phone,
-            'reception_time' : self.reception_time,
+            'id': self.id,
+            'role': self.role,
+            'photo': self.photo,
+            'fullname': self.fullname,
+            'desc': self.desc,
+            'email': self.email,
+            'phone': self.phone,
+            'reception_time': self.reception_time,
 
         }
-
 
 
 class JsonEcodeDict(db.TypeDecorator):
@@ -1088,12 +1135,7 @@ class JsonEcodeDict(db.TypeDecorator):
             return json.loads(value)
 
 
-
-
-
-
 class Degrees(db.Model):
-
     id = db.Column(db.Integer, primary_key=True)
     # title = db.Column(JsonEcodeDict)
     # description = db.Column(JsonEcodeDict)
@@ -1105,15 +1147,14 @@ class Degrees(db.Model):
     degree = db.Column(db.Text)
     text_fordegrees = db.relationship('Text_Fordegrees', backref='text_degree', lazy=True, cascade="all, delete-orphan")
 
-
     def format(self):
         return {
             'id': self.id,
             # 'title': self.title,
             # 'description': self.description,
-            'upper_img': f'/static/{self.id}/upper_img/{self.upper_img}',
-            'bottom_img': f'/static/{self.id}/bottom_img/{self.bottom_img}',
-            'about' : self.about,
+            'upper_img': f'/static/degrees/{self.id}/upper_img/{self.upper_img}',
+            'bottom_img': f'/static/degrees/{self.id}/bottom_img/{self.bottom_img}',
+            'about': self.about,
             'video_link': self.video_link,
             'university_name': self.university_name,
             'degree': self.degree,
@@ -1123,23 +1164,23 @@ class Degrees(db.Model):
 
 
 class Text_Fordegrees(db.Model):
-
     id = db.Column(db.Integer, primary_key=True)
     fordegree_id = db.Column(db.Integer, db.ForeignKey('degrees.id'))
     title_or_info = db.Column(db.String, default='info')
     text = db.Column(db.Text, nullable=False)
 
-
     def format(self):
         return {
 
             "id": self.id,
-            "fordegree_id":self.fordegree_id,
-            "title":self.title_or_info,
-            "text":self.text,
+            "fordegree_id": self.fordegree_id,
+            "title": self.title_or_info,
+            "text": self.text,
         }
 
+
 from flask_login import UserMixin
+
 
 class AdminFlask(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
@@ -1151,21 +1192,43 @@ class NewsPage(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     img = db.Column(db.Text)
     title = db.Column(db.Text)
-    desc =  db.Column(db.Text)
+    desc = db.Column(db.Text)
+    page = db.Column(db.Text)
 
-    def format(self):
-        cards = News2.query.all()
+    def updateGet(self):
         return {
             'id': self.id,
-            'img': f'/news_page/{self.id}/{self.img}',
+            'img': f'static/news_page/{self.id}/upper_img/{self.img}',
             'title': self.title,
             'desc': self.desc,
+            'page': self.page,
+
+        }
+
+    def format(self, for_page):
+        cards = News2.query.filter_by(for_page=for_page).all()
+        return {
+            'id': self.id,
+            'img': f'static/news_page/{self.id}/upper_img/{self.img}',
+            'title': self.title,
+            'desc': self.desc,
+            'page': self.page,
             'cards': [x.format2() for x in cards]
+        }
+
+    def format2(self):
+
+        return {
+            'id': self.id,
+            'img': f'static/news_page/{self.id}/upper_img/{self.img}',
+            'title': self.title,
+            'desc': self.desc,
+            'page': self.page,
+
         }
 
 
 class News2(db.Model):
-
     id = db.Column(db.Integer, primary_key=True)
 
     upper_img = db.Column(db.Text)
@@ -1173,51 +1236,52 @@ class News2(db.Model):
     about = db.Column(db.Text)
     video_link = db.Column(db.Text)
     name = db.Column(db.Text)
+    desc = db.Column(db.Text)
     text_fornews = db.relationship('Text_ForNews', backref='text_news', lazy=True, cascade="all, delete-orphan")
+    for_page = db.Column(db.Text)
 
     def format(self, cards):
-
+        # cards = News2.query.filter_by(for_page=for_page).all()
         return {
             'id': self.id,
-            'upper_img': f'/card/{self.id}/{self.upper_img}',
-            'bottom_img': f'/card/{self.id}/{self.bottom_img}',
+            'upper_img': f'/static/card/{self.id}/upper_img/{self.upper_img}',
+            'bottom_img': f'/static/card/{self.id}/bottom_img/{self.bottom_img}',
             'about': self.about,
             'video_link': self.video_link,
             'name': self.name,
+            'desc': self.desc,
             "texts": [x.format() for x in self.text_fornews],
+            'for_page': self.for_page,
             'recommend': [x.format2() for x in cards]
         }
 
-
     def format2(self):
-
         return {
             'id': self.id,
-            'upper_img': f'/card/{self.id}/{self.upper_img}',
-            'bottom_img': f'/card/{self.id}/{self.bottom_img}',
+            'upper_img': f'/static/card/{self.id}/upper_img/{self.upper_img}',
+            'bottom_img': f'/static/card/{self.id}/bottom_img/{self.bottom_img}',
             'about': self.about,
             'video_link': self.video_link,
             'name': self.name,
+            'desc': self.desc,
+            'for_page': self.for_page,
             "texts": [x.format() for x in self.text_fornews],
 
         }
 
-class Text_ForNews(db.Model):
 
+class Text_ForNews(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     fordegree_id = db.Column(db.Integer, db.ForeignKey('news2.id'))
     title_or_info = db.Column(db.String, default='info')
     text = db.Column(db.Text, nullable=False)
 
-
     def format(self):
-
         return {
 
             "id": self.id,
-            "fordegree_id":self.fordegree_id,
-            "title":self.title_or_info,
-            "text":self.text,
-
+            "fordegree_id": self.fordegree_id,
+            "title": self.title_or_info,
+            "text": self.text,
 
         }

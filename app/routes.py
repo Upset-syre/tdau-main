@@ -577,7 +577,7 @@ def add_news(с):
         db.session.add(content)
         db.session.commit()
 
-        saver.save(os.path.join('uploads/images/', pic_name))
+        saver.save(os.path.join('static/uploads/images/', pic_name))
 
         return 'Success adding content_text'
     return jsonify({"msg": "Done"})
@@ -635,7 +635,7 @@ def update_newspic(с):
 
             db.session.add(pic_edit)
             db.session.commit()
-            saver.save(os.path.join('uploads/images/', pic_name))
+            saver.save(os.path.join('static/uploads/images/', pic_name))
 
         db.session.add(pic_edit)
         db.session.commit()
@@ -1169,26 +1169,26 @@ def add_university_foreign(с):
     picture_desc = request.files.get('picture_desc')
     if request.files.get('videos'):
         video = request.files.get('videos')
-        video.save(os.path.join('uploads/videos/',
+        video.save(os.path.join('static/uploads/videos/',
                                 "university_foreign_id" + str(u.id) + secure_filename(str(video.filename))))
-        u.video = str(os.path.join('uploads/videos/',
+        u.video = str(os.path.join('static/uploads/videos/',
                                    "university_foreign_id" + str(u.id) + secure_filename(str(video.filename))))
     elif request.form.get('videos'):
         video_str = request.form.get("videos")
         u.video = video_str
-    logo.save(os.path.join('uploads/images/',
+    logo.save(os.path.join('static/uploads/images/',
                            "university_foreign_id" + str(u.id) + secure_filename(str(logo.filename))))
-    picture.save(os.path.join('uploads/images/',
+    picture.save(os.path.join('static/uploads/images/',
                               "university_foreign_id" + str(u.id) + secure_filename(str(picture.filename))))
-    picture_desc.save(os.path.join('uploads/images/', "university_foreign_id" +
+    picture_desc.save(os.path.join('static/uploads/images/', "university_foreign_id" +
                                    str(u.id) + secure_filename(str(picture_desc.filename))))
 
-    u.logo = str(os.path.join('uploads/images/',
+    u.logo = str(os.path.join('static/uploads/images/',
                               "university_foreign_id" + str(u.id) + secure_filename(str(logo.filename))))
     u.picture = str(os.path.join(
-        'uploads/images/', "university_foreign_id" + str(u.id) + secure_filename(str(picture.filename))))
+        'static/uploads/images/', "university_foreign_id" + str(u.id) + secure_filename(str(picture.filename))))
     u.picture_desc = str(os.path.join(
-        'uploads/images/', "university_foreign_id" + str(u.id) + secure_filename(str(picture_desc.filename))))
+        'static/uploads/images/', "university_foreign_id" + str(u.id) + secure_filename(str(picture_desc.filename))))
 
     db.session.add(u)
     db.session.commit()
@@ -1235,54 +1235,56 @@ def edit_university_foreign(c):
 
         if request.files.get("logo"):
             logo = request.files.get("logo")
-            logo.save(os.path.join('uploads/images/', "university_foreign_id" +
+            logo.save(os.path.join('static/uploads/images/', "university_foreign_id" +
                                    str(uni.id) + secure_filename(str(logo.filename))))
             # delete old logo
             try:
-                os.remove(os.path.join('uploads/images/', uni.logo))
+                os.remove(os.path.join('static/uploads/images/', uni.logo))
             except:
                 pass
             uni.logo = str(os.path.join(
-                'uploads/images/', "university_foreign_id" + str(uni.id) + secure_filename(str(logo.filename))))
+                'static/uploads/images/', "university_foreign_id" + str(uni.id) + secure_filename(str(logo.filename))))
         if request.files.get("picture"):
             picture = request.files.get("picture")
-            picture.save(os.path.join('uploads/images/', "university_foreign_id" +
+            picture.save(os.path.join('static/uploads/images/', "university_foreign_id" +
                                       str(uni.id) + secure_filename(str(picture.filename))))
             # delete old picture
             try:
-                os.remove(os.path.join('uploads/images/', uni.picture))
+                os.remove(os.path.join('static/uploads/images/', uni.picture))
             except:
                 pass
 
             uni.picture = str(os.path.join(
-                'uploads/images/', "university_foreign_id" + str(uni.id) + secure_filename(str(picture.filename))))
+                'static/uploads/images/',
+                "university_foreign_id" + str(uni.id) + secure_filename(str(picture.filename))))
         if request.files.get("videos"):
             video = request.files.get("videos")
-            video.save(os.path.join('uploads/videos/', "university_foreign_id" +
+            video.save(os.path.join('static/uploads/videos/', "university_foreign_id" +
                                     str(uni.id) + secure_filename(str(video.filename))))
             # delete old video
             if uni.video != 'none' or not uni.video:
                 try:
-                    os.remove(os.path.join('uploads/videos/', uni.video))
+                    os.remove(os.path.join('static/uploads/videos/', uni.video))
                 except:
                     pass
             uni.video = str(os.path.join(
-                'uploads/videos/', "university_foreign_id" + str(uni.id) + secure_filename(str(video.filename))))
+                'static/uploads/videos/', "university_foreign_id" + str(uni.id) + secure_filename(str(video.filename))))
         elif request.form.get("videos"):
             video_str = request.form.get("videos")
             uni.video = video_str
         if request.files.get("picture_desc"):
             picture_desc = request.files.get("picture_desc")
-            picture_desc.save(os.path.join('uploads/images/', "university_foreign_id" +
+            picture_desc.save(os.path.join('static/uploads/images/', "university_foreign_id" +
                                            str(uni.id) + secure_filename(str(picture_desc.filename))))
             # delete old picture_desc
             if uni.picture_desc != 'none' or not uni.picture_desc:
                 try:
-                    os.remove(os.path.join('uploads/images/', uni.picture_desc))
+                    os.remove(os.path.join('static/uploads/images/', uni.picture_desc))
                 except:
                     pass
             uni.picture_desc = str(os.path.join(
-                'uploads/images/', "university_foreign_id" + str(uni.id) + secure_filename(str(picture_desc.filename))))
+                'static/uploads/images/',
+                "university_foreign_id" + str(uni.id) + secure_filename(str(picture_desc.filename))))
         db.session.commit()
         return jsonify({"msg": "ok"})
     id = request.args.get('id')
@@ -1322,7 +1324,7 @@ def add_billboard(c):
         db.session.add(content)
         db.session.commit()
 
-        saver.save(os.path.join('uploads/images/', pic_name))
+        saver.save(os.path.join('static/uploads/images/', pic_name))
 
         return jsonify({"msg": "ok"})
 
@@ -1392,7 +1394,7 @@ def update_billboard():
 
             db.session.add(bill_edit)
             db.session.commit()
-            saver.save(os.path.join('uploads/images/', pic_name))
+            saver.save(os.path.join('static/uploads/images/', pic_name))
         db.session.add(bill_edit)
         db.session.commit()
 
@@ -2097,24 +2099,49 @@ def reset_password(c):
 from .utils import *
 
 
-@token_required
 @tdau.route('/add_d', methods=['POST'])
-def addDeegres():
+@token_required
+def addDeegres(c):
     if request.method == 'POST':
         upper_img = request.files.get('upper_img')
         bottom_img = request.files.get('bottom_img')
+        req_degree = request.form.get('degree')
+        exist_degrees = Degrees.query.filter_by(degree=req_degree)
+        list_d = []
+        for i in exist_degrees:
+            list_d.append(i)
+
+        if len(list_d) > 0:
+            exist_degrees = Degrees.query.filter_by(degree=req_degree).first()
+            if exist_degrees.degree == 'bachelor':
+                db.session.delete(exist_degrees)
+                full_path = os.path.join(current_app.root_path, 'static', 'degrees', str(exist_degrees.id))
+                shutil.rmtree(full_path)
+                db.session.commit()
+            if exist_degrees.degree == 'master':
+                db.session.delete(exist_degrees)
+                db.session.delete(exist_degrees)
+                full_path = os.path.join(current_app.root_path, 'static', 'degrees', str(exist_degrees.id))
+                shutil.rmtree(full_path)
+                db.session.commit()
+            if exist_degrees.degree == 'phd':
+                db.session.delete(exist_degrees)
+                db.session.delete(exist_degrees)
+                full_path = os.path.join(current_app.root_path, 'static', 'degrees', str(exist_degrees.id))
+                shutil.rmtree(full_path)
+                db.session.commit()
         degree = Degrees(
             about=request.form.get('about'), university_name=request.form.get('name'),
             video_link=request.form.get('video'),
-            degree=request.form.get('degree'))
+            degree=req_degree)
         db.session.add(degree)
         db.session.flush()
 
         if request.files.get('upper_img') and allowed_pic(upper_img.filename):
-            degree.upper_img = save_upper_picture(upper_img, degree.id)
+            degree.upper_img = save_picture(upper_img, degree.id, 'upper_img_page')
 
         if request.files.get('bottom_img') and allowed_pic(bottom_img.filename):
-            degree.bottom_img = save_bottom_picture(bottom_img, degree.id)
+            degree.bottom_img = save_picture(bottom_img, degree.id, 'bottom_img_page')
 
         db.session.commit()
         titles = request.form.get('title')
@@ -2149,22 +2176,22 @@ def getP():
     return jsonify([x.format() for x in bach])
 
 
-@token_required
 @tdau.route('/delete_d')
-def deleteDegree():
+@token_required
+def deleteDegree(c):
     id = request.args.get('id')
     degree = Degrees.query.get_or_404(id)
 
     db.session.delete(degree)
-    full_path = os.path.join(current_app.root_path, 'static', str(degree.id))
+    full_path = os.path.join(current_app.root_path, 'static', 'degrees', str(degree.id))
     shutil.rmtree(full_path)
     db.session.commit()
     return jsonify({'msg': 'deleted'}, 200)
 
 
-@token_required
 @tdau.route('/update_d', methods=['POST', 'GET'])
-def updateDegree():
+@token_required
+def updateDegree(c):
     upper_img = request.files.get('upper_img')
     bottom_img = request.files.get('bottom_img')
 
@@ -2178,10 +2205,10 @@ def updateDegree():
         degree_post.video_link = request.form.get('video')
         degree_post.degree = request.form.get('degree')
         if request.files.get('upper_img') and allowed_pic(upper_img.filename):
-            degree_post.upper_img = save_upper_picture(upper_img, degree_post.id)
+            degree_post.upper_img = save_picture(upper_img, degree_post.id, 'upper_img_page')
 
         if request.files.get('bottom_img') and allowed_pic(bottom_img.filename):
-            degree_post.bottom_img = save_bottom_picture(bottom_img, degree_post.id)
+            degree_post.bottom_img = save_picture(bottom_img, degree_post.id, 'bottom_img_page')
         db.session.commit()
         if request.form.get("title"):
             titles = request.form.get("title")
@@ -2198,7 +2225,6 @@ def updateDegree():
         return jsonify({'msg': 'updated'})
 
 
-@token_required
 @tdau.route('/update_d_get', methods=['POST', 'GET'])
 def updateDegree_get():
     id = request.args.get('id')
@@ -2206,79 +2232,158 @@ def updateDegree_get():
     return degree.format()
 
 
-@token_required
 @tdau.route('/add_newspage', methods=['POST'])
-def addNewspage():
+@token_required
+def addNewspage(c):
     img = request.files.get('img')
-    news_page = NewsPage(title=request.form.get('title'), desc=request.form.get('desc'))
+    # old_page = NewsPage.query.filter_by(id=1).first()
+    # if old_page:
+    #     db.session.delete(old_page)
+    #     db.session.commit()
+    news_page = NewsPage(title=request.form.get('title'), desc=request.form.get('desc'),
+                         page=request.form.get('page'))
     db.session.add(news_page)
     db.session.flush()
-    print(img)
+
     if img and allowed_pic(img.filename):
-        news_page.img = save_page_picture(img, news_page.id)
+        news_page.img = save_picture(img, news_page.id, 'news_page')
     db.session.commit()
     return jsonify({'msg': 'added'}, 200)
 
 
 @tdau.route('/get_newspage')
 def getNewspage():
-    id = request.args.get('id')
-    news_page = NewsPage.query.get(id)
+    type = request.args.get('type')
+    news_page = NewsPage.query.all()
+    card = News2.query.all()
+    print(type)
+    if str(type) == 'page':
+        return jsonify([x.format2() for x in news_page])
+    return jsonify([x.format2() for x in card])
 
-    return news_page.format()
 
-
-@token_required
 @tdau.route('/update_newspage', methods=['POST'])
-def updateNewsPage():
+@token_required
+def updateNewsPage(c):
     id = request.form.get('id')
     img = request.files.get('img')
     news_page = NewsPage.query.get(id)
 
     news_page.title = request.form.get('title')
     news_page.desc = request.form.get('desc')
+    news_page.page = request.form.get('page')
     if img and allowed_pic(img.filename):
-        news_page.img = save_page_picture(img, news_page.id)
+        news_page.img = save_picture(img, news_page.id, 'news_page')
     db.session.commit()
     return jsonify({'msg': 'updated!'}, 200)
 
+@tdau.route('/update_np_get')
+def UpdateNpGet():
+    id = request.args.get('id')
+    page = NewsPage.query.get(id)
 
-@token_required
+    return page.updateGet()
+
 @tdau.route('/delete_newspage')
-def delete():
+@token_required
+def delete(c):
     id = request.args.get('id')
     news_page = NewsPage.query.get(id)
 
     db.session.delete(news_page)
-    full_path = os.path.join(current_app.root_path, 'news_page', str(news_page.id))
+    full_path = os.path.join(current_app.root_path, 'static', 'news_page', str(news_page.id))
     shutil.rmtree(full_path)
     db.session.commit()
     return jsonify({'msg': 'deleted!'}, 200)
 
 
-@token_required
-@tdau.route('/update_np_get', methods=['GET'])
-def updateNp_get():
-    id = request.args.get('id')
-    news_page = NewsPage.query.get_or_404(id)
-    return news_page.format()
+def inputFilter(filter_name):
+    return filter_name
 
 
-@token_required
+@tdau.route('/conferences', methods=['GET'])
+def conferences():
+    pages = NewsPage.query.filter_by(page='conference').all()
+    list_pages = []
+    for page in pages:
+        list_pages.append(page.id)
+    print(list_pages)
+    last_page = list_pages[-1]
+    print(last_page)
+    new_page = NewsPage.query.get(last_page)
+
+    return new_page.format(new_page.page)
+
+
+@tdau.route('/science', methods=['GET'])
+def science():
+    pages = NewsPage.query.filter_by(page='science').all()
+    list_pages = []
+    for page in pages:
+        list_pages.append(page.id)
+    print(list_pages)
+    last_page = list_pages[-1]
+    print(last_page)
+    new_page = NewsPage.query.get(last_page)
+    return new_page.format(new_page.page)
+
+
+@tdau.route('/scientific', methods=['GET'])
+def scientific():
+    pages = NewsPage.query.filter_by(page='scientific').all()
+    list_pages = []
+    for page in pages:
+        list_pages.append(page.id)
+    print(list_pages)
+    last_page = list_pages[-1]
+    print(last_page)
+    new_page = NewsPage.query.get(last_page)
+    return new_page.format(new_page.page)
+
+
+@tdau.route('/innovation', methods=['GET'])
+def innovation():
+    pages = NewsPage.query.filter_by(page='innovation').all()
+    list_pages = []
+    for page in pages:
+        list_pages.append(page.id)
+    print(list_pages)
+    last_page = list_pages[-1]
+    print(last_page)
+    new_page = NewsPage.query.get(last_page)
+    return new_page.format(new_page.page)
+
+
+@tdau.route('/dev', methods=['GET'])
+def dev():
+    pages = NewsPage.query.filter_by(page='dev').all()
+    list_pages = []
+    for page in pages:
+        list_pages.append(page.id)
+    print(list_pages)
+    last_page = list_pages[-1]
+    print(last_page)
+    new_page = NewsPage.query.get(last_page)
+    return new_page.format(new_page.page)
+
+
 @tdau.route('/add_card', methods=['POST'])
-def addCard():
+@token_required
+def addCard(c):
     upper_img = request.files.get('upper_img')
     bottom_img = request.files.get('bottom_img')
-    card = News2(about=request.form.get('about'), video_link=request.form.get('video'), name=request.form.get('name'))
+    card = News2(about=request.form.get('about'), video_link=request.form.get('video'), name=request.form.get('name'),
+                 for_page=request.form.get('page'),
+                 desc=request.form.get('desc'))
 
     db.session.add(card)
     db.session.flush()
 
     if upper_img and allowed_pic(upper_img.filename):
-        card.upper_img = save_upper_picture2(upper_img, card.id)
+        card.upper_img = save_picture(upper_img, card.id, 'upper_card_page')
 
     if bottom_img and allowed_pic(bottom_img.filename):
-        card.bottom_img = save_bottom_picture2(bottom_img, card.id)
+        card.bottom_img = save_picture(bottom_img, card.id, 'bottom_card_page')
 
     db.session.commit()
     titles = request.form.get('title')
@@ -2291,9 +2396,9 @@ def addCard():
     return jsonify({'msg': 'added!'})
 
 
-@token_required
 @tdau.route('/update_card', methods=['POST'])
-def updateCArd():
+@token_required
+def updateCArd(c):
     id = request.form.get('id')
     upper_img = request.files.get('upper_img')
     bottom_img = request.files.get('bottom_img')
@@ -2302,12 +2407,14 @@ def updateCArd():
     card.name = request.form.get('name')
     card.about = request.form.get('about')
     card.video_link = request.form.get('video')
+    card.desc = request.form.get('desc')
+    card.for_page = request.form.get('page')
 
     if upper_img and allowed_pic(upper_img.filename):
-        card.upper_img = save_upper_picture2(upper_img, card.id)
+        card.upper_img = save_picture(upper_img, card.id, 'upper_card_page')
 
     if bottom_img and allowed_pic(bottom_img.filename):
-        card.bottom_img = save_bottom_picture2(bottom_img, card.id)
+        card.bottom_img = save_picture(bottom_img, card.id, 'bottom_card_page')
     db.session.commit()
     if request.form.get("title"):
         titles = request.form.get("title")
@@ -2324,14 +2431,14 @@ def updateCArd():
     return jsonify({'msg': 'updated'})
 
 
-@token_required
 @tdau.route('/delete_card')
-def deleteCard():
+@token_required
+def deleteCard(c):
     id = request.args.get('id')
     card = News2.query.get(id)
 
     db.session.delete(card)
-    full_path = os.path.join(current_app.root_path, 'card', str(card.id))
+    full_path = os.path.join(current_app.root_path, 'static', 'card', str(card.id))
     shutil.rmtree(full_path)
     db.session.commit()
     return jsonify({'msg': 'deleted!'}, 200)
@@ -2341,14 +2448,14 @@ def deleteCard():
 def getCard():
     id = request.args.get('id')
     card = News2.query.get(id)
-    cards = News2.query.order_by(func.random()).filter(News2.id != card.id).limit(3)
+    cards = News2.query.order_by(func.random()).filter(News2.id != card.id, News2.for_page == card.for_page).limit(3)
 
     return card.format(cards)
 
 
-@token_required
 @tdau.route('/update_card_get', methods=['GET'])
 def updateCard_get():
     id = request.args.get('id')
     card = News2.query.get_or_404(id)
+
     return card.format2()

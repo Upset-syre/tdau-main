@@ -6,7 +6,7 @@
 {% block body %}
 
 <p>Welcome to Admin Panel!</p>
-
+<a href="{{ url_for('flask__admin.logout') }}">LogOut</a>
 {% endblock %}
 
 {% else %}

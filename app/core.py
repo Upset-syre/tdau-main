@@ -57,9 +57,13 @@ def hash_and_save(attach: FileStorage, folder : str) -> void:
     #     f.write(attach.read())
     bytes_f = attach.read()
     ret_data = hashlib.md5(bytes_f).hexdigest() + "_." + ext
-    with open(os.path.join(current_app.root_path, 'uploads', folder, ret_data), "wb") as f:
+    full_path = os.path.join(current_app.root_path, 'static', 'uploads', folder)
+    if not os.path.exists(full_path):
+        os.makedirs(full_path)
+    with open(os.path.join(current_app.root_path, 'static', 'uploads', folder, ret_data), "wb") as f:
         f.write(bytes_f)
-    return f"{current_app.root_path}\\uploads\\" + folder + "\\" + ret_data
+    # return "\\uploads\\" + folder + "\\" + ret_data
+    return f'static/uploads/{folder}/{ret_data}'
     
 
 def Exist_username(username):
