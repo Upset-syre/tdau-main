@@ -547,40 +547,104 @@ def admission_confirm(u):
 
 @tdau.route('/main')
 def main():
-    content = [x.format() for x in News.query.all()], [x.format()
-                                                       for x in University_foreign.query.all()], [x.format() for x in
-                                                                                                  Billboard.query.all()]
+    lang = request.args.get('lang')
+    if lang == 'uz':
+        content = [x.format_uz() for x in News.query.all()], \
+                  [x.format()for x in University_foreign.query.all()], [x.format_uz() for x in Billboard.query.all()]
     #  \[x.format() for x in Billboard.query.all()]
+    if lang == 'ru':
+        content = [x.format_ru() for x in News.query.all()], \
+                  [x.format() for x in University_foreign.query.all()], [x.format_ru() for x in Billboard.query.all()]
+
+    if lang == 'en':
+        content = [x.format_en() for x in News.query.all()], \
+                  [x.format() for x in University_foreign.query.all()], [x.format_en() for x in Billboard.query.all()]
+
+    if lang == None:
+        content = [x.format() for x in News.query.all()], \
+                  [x.format() for x in University_foreign.query.all()], [x.format() for x in Billboard.query.all()]
 
     return jsonify(content)
+
+def pic_save(model, pic):
+    # Grab Image name
+    pic_filename = secure_filename(model.filename)
+
+    # Set UUID
+    pic_name = str(uuid.uuid1()) + "_" + pic_filename
+
+    # Save That Image
+    saver = pic
+
+    # Change it to a string to save to db
+    model = pic_name
+
+    full_path = os.path.join(current_app.root_path, 'static', 'uploads', 'images')
+    if not os.path.exists(full_path):
+        os.makedirs(full_path)
+    saver.save(os.path.join(full_path, pic_name))
+    return model
 
 
 @tdau.route('/add_news', methods=['POST', 'GET'])
 @token_required
 def add_news(с):
     if request.method == 'POST':
-        content = News(title_news=request.form.get('title_news'),
-                       picture_news=request.files.get('picture_news'))
-
-        # Grab Image name
-        pic_filename = secure_filename(content.picture_news.filename)
-
-        # Set UUID
-        pic_name = str(uuid.uuid1()) + "_" + pic_filename
-
-        # Save That Image
-        saver = request.files.get('picture_news')
-
-        # Change it to a string to save to db
-        content.picture_news = pic_name
+        picture1 = request.files.get('picture_1')
+        picture2 = request.files.get('picture_2')
+        video = request.files.get('video')
+        file = request.files.get('file')
+        video_link = request.form.get('video')
+        content = News(title_news_ru=request.form.get('title_ru'), title_news_uz=request.form.get('title_uz'),
+                       title_news_en=request.form.get('title_en'),
+                       about_uz_2=request.form.get('about_uz'), about_ru_2=request.form.get('about_ru'),
+                       about_en_2=request.form.get('about_en'), picture_news='pic')
 
         db.session.add(content)
+        db.session.flush()
+
+        if picture1 and allowed_pic(picture1.filename):
+            content.picture_news = save_picture(picture1, content.id, 'news_img_1')
+
+        if picture2 and allowed_pic(picture2.filename):
+            content.picture_news_555 = save_picture(picture2, content.id, 'news_img_2')
+        if video and allowed_pic(video.filename):
+            content.video = save_picture(video, content.id, 'news_video')
+        if video_link:
+         content.video = video_link
+
+        if file:
+            content.file = save_picture(file, content.id, 'news_file')
+
+
         db.session.commit()
 
-        saver.save(os.path.join('static/uploads/images/', pic_name))
+        titles = request.form.get('titles_uz')
+        titles = eval(titles)
+        for i in titles:
+            t = Text_ForNews_Uz(title_or_info=i["title"],
+                               text=i["text"], fordegree_id=content.id)
+            db.session.add(t)
+            db.session.commit()
 
-        return 'Success adding content_text'
-    return jsonify({"msg": "Done"})
+        titles = request.form.get('titles_ru')
+        titles = eval(titles)
+        for i in titles:
+            t = Text_ForNews_Ru(title_or_info=i["title"],
+                               text=i["text"], fordegree_id=content.id)
+            db.session.add(t)
+            db.session.commit()
+
+        titles = request.form.get('titles_en')
+        titles = eval(titles)
+        for i in titles:
+            t = Text_ForNews_En(title_or_info=i["title"],
+                               text=i["text"], fordegree_id=content.id)
+            db.session.add(t)
+            db.session.commit()
+        return jsonify({'msg': 'added!'})
+
+
 
 
 @tdau.route('/delete_news')
@@ -588,6 +652,13 @@ def add_news(с):
 def delete_news(c):
     id = request.args.get('id')
     post_to_delete = News.query.get_or_404(id)
+
+    if post_to_delete.picture_news != None and post_to_delete.picture_news_555 != None:
+        db.session.delete(post_to_delete)
+        full_path = os.path.join(current_app.root_path, 'static', 'news', str(post_to_delete.id))
+        shutil.rmtree(full_path)
+        db.session.commit()
+        return jsonify({'msg': 'deleted!'}, 200)
 
     db.session.delete(post_to_delete)
     db.session.commit()
@@ -614,35 +685,72 @@ def update_newspic(с):
 
         id = request.form.get('id')
         pic_edit = News.query.get_or_404(id)
-        title_news = request.form.get('title')
-        if title_news:
-            pic_edit.title_news = request.form.get('title')
-        # if pic_edit.picture_news != request.files.get('picture_news') and request.files.get('picture_news'):
-        if request.files.get('picture_news'):
-            pic_edit.picture_news = request.files.get('picture_news')
 
-            # Grab Image name
-            pic_filename = secure_filename(pic_edit.picture_news.filename)
+        pic_edit.title_news_uz = request.form.get('title_uz')
+        pic_edit.title_news_ru = request.form.get('title_ru')
+        pic_edit.title_news_en = request.form.get('title_en')
+        pic_edit.about_uz_2 = request.form.get('about_uz')
+        pic_edit.about_en_2 = request.form.get('about_en')
+        pic_edit.about_ru_2 = request.form.get('about_ru')
+        picture1 = request.files.get('picture_1')
+        picture2 = request.files.get('picture_2')
+        video = request.files.get('videos')
+        file = request.files.get('file')
+        video_link = request.form.get('videos')
 
-            # Set UUID
-            pic_name = str(uuid.uuid1()) + "_" + pic_filename
+        if picture1 and allowed_pic(picture1.filename):
+            pic_edit.picture_news = save_picture(picture1, pic_edit.id, 'news_img_1')
 
-            # Save That Image
-            saver = request.files['picture_news']
+        if picture2 and allowed_pic(picture2.filename):
+            pic_edit.picture_news_555 = save_picture(picture2, pic_edit.id, 'news_img_2')
+        if video and allowed_pic(video.filename):
+            pic_edit.video = save_picture(video, pic_edit.id, 'news_video')
+        if video_link:
+            pic_edit.video = video_link
 
-            # Change it to a string to save to db
-            pic_edit.picture_news = pic_name
+        if file:
+            pic_edit.file = save_picture(file, pic_edit.id, 'news_file')
 
-            db.session.add(pic_edit)
-            db.session.commit()
-            saver.save(os.path.join('static/uploads/images/', pic_name))
-
-        db.session.add(pic_edit)
         db.session.commit()
-        # else:
 
-        return jsonify({"msg": "OK"})
-    return jsonify({"msg": "update_news"})
+        if request.form.get("titles_uz"):
+            titles = request.form.get("titles_uz")
+
+            titles = eval(titles)
+            if len(titles) > 0:
+                for j in Text_ForNews_Uz.query.filter_by(fordegree_id=id).all():
+                    db.session.delete(j)
+                    db.session.commit()
+                for i in titles:
+                    db.session.add(Text_ForNews_Uz(
+                        fordegree_id=pic_edit.id, title_or_info=i['title'], text=i['text']))
+                    db.session.commit()
+        if request.form.get("titles_ru"):
+            titles = request.form.get("titles_ru")
+
+            titles = eval(titles)
+            if len(titles) > 0:
+                for j in Text_ForNews_Ru.query.filter_by(fordegree_id=id).all():
+                    db.session.delete(j)
+                    db.session.commit()
+                for i in titles:
+                    db.session.add(Text_ForNews_Ru(
+                        fordegree_id=pic_edit.id, title_or_info=i['title'], text=i['text']))
+                    db.session.commit()
+
+                if request.form.get("titles_en"):
+                    titles = request.form.get("titles_en")
+
+                    titles = eval(titles)
+                    if len(titles) > 0:
+                        for j in Text_ForNews_En.query.filter_by(fordegree_id=id).all():
+                            db.session.delete(j)
+                            db.session.commit()
+                        for i in titles:
+                            db.session.add(Text_ForNews_En(
+                                fordegree_id=pic_edit.id, title_or_info=i['title'], text=i['text']))
+                            db.session.commit()
+        return jsonify({'msg': 'updated'})
 
 
 @tdau.route("/list_admissions", methods=['GET'])
@@ -1127,6 +1235,15 @@ def admission_foreign(u):
 
 @tdau.route("/get_foreign_universities")
 def get_foreign_universities():
+    lang = request.args.get('lang')
+
+    if lang == 'uz':
+        return jsonify({"all": [x.format_uz() for x in University_foreign.query.all()]})
+    if lang == 'ru':
+        return jsonify({"all": [x.format_ru() for x in University_foreign.query.all()]})
+    if lang == 'en':
+        return jsonify({"all": [x.format_en() for x in University_foreign.query.all()]})
+
     return jsonify({"all": [x.format() for x in University_foreign.query.all()]})
 
 
@@ -1152,162 +1269,250 @@ def add_edu_types_foreign(c):
     return jsonify({"msg": "ok"}), 200
 
 
-@tdau.route("/add/university_foreign", methods=['POST'])
+# @tdau.route("/add/university_foreign", methods=['POST'])
+# @token_required
+# def add_university_foreign(с):
+#     u = University_foreign()
+#     u.title_uz = request.form.get('title_uz')
+#     u.title_ru = request.form.get('title_ru')
+#     u.title_en = request.form.get('title_en')
+#     u.description_uz = request.form.get('description_uz')
+#     u.description_en = request.form.get('description_en')
+#     u.description_ru = request.form.get('description_ru')
+#     u.logo = 'none'
+#     u.picture = 'none'
+#     u.picture_desc = 'none'
+#     u.video = 'none'
+#     db.session.add(u)
+#     db.session.commit()
+#     logos = request.files.get('picture_logo')
+#     picture = request.files.get('picture')
+#     picture_desc = request.files.get('picture_desc')
+#     if request.files.get('videos'):
+#         video = request.files.get('videos')
+#         full_path = os.path.join(current_app.root_path, 'static', 'uploads','videos')
+#
+#         if not os.path.exists(full_path):
+#             os.makedirs(full_path)
+#         video.save(os.path.join(full_path,
+#                                 "university_foreign_id" + str(u.id) + secure_filename(str(video.filename))))
+#         u.video =  str(f'static/uploads/images/university_foreign_id' + str(u.id) + secure_filename(str(video.filename)))
+#     elif request.form.get('videos'):
+#         video_str = request.form.get("videos")
+#         u.video = video_str
+#
+#     full_path = os.path.join(current_app.root_path, 'static', 'uploads', 'images', 'university_foreign_id')
+#
+#     if not os.path.exists(full_path):
+#         os.makedirs(full_path)
+#     saved_logo = str(u.id) + secure_filename(str(logos.filename))
+#     logos.save(os.path.join(full_path,
+#                            "university_foreign_id" + str(u.id) + saved_logo))
+#     saved_picture = str(u.id) + secure_filename(str(picture.filename))
+#     picture.save(os.path.join(full_path,
+#                               "university_foreign_id" + saved_picture))
+#     saved_picture_desc = secure_filename(str(picture_desc.filename))
+#     picture_desc.save(os.path.join(full_path, "university_foreign_id" +
+#                                    str(u.id) + saved_picture_desc))
+#
+#     u.logo = str(f'static/uploads/images/university_foreign_id' + saved_logo)
+#     u.picture =  str(f'static/uploads/images/university_foreign_id' + saved_picture)
+#     u.picture_desc =  str(f'static/uploads/images/university_foreign_id' + saved_picture_desc)
+#
+#     db.session.add(u)
+#     db.session.commit()
+#     ed_t = Education_type_foreign(name="Bachelor", university_id=u.id)
+#     ed_t2 = Education_type_foreign(name="Master", university_id=u.id)
+#     db.session.add(ed_t)
+#     db.session.add(ed_t2)
+#     db.session.commit()
+#     titles_uz = request.form.get('titles_uz')
+#     # titles = json.loads(titles)
+#     titles_uz = eval(titles_uz)
+#     for i in titles_uz:
+#         t = Text_foreign_uz(title_or_info=i["title"],
+#                          text=i["text"], university_id=u.id)
+#         db.session.add(t)
+#         db.session.commit()
+#
+#     titles_ru = request.form.get('titles_ru')
+#     # titles = json.loads(titles)
+#     titles_ru = eval(titles_ru)
+#     for i in titles_ru:
+#         t = Text_foreign_ru(title_or_info=i["title"],
+#                             text=i["text"], university_id=u.id)
+#         db.session.add(t)
+#         db.session.commit()
+#
+#     titles_en = request.form.get('titles_en')
+#     # titles = json.loads(titles)
+#     titles_en = eval(titles_en)
+#     for i in titles_en:
+#         t = Text_foreign_en(title_or_info=i["title"],
+#                             text=i["text"], university_id=u.id)
+#         db.session.add(t)
+#         db.session.commit()
+#
+#     return jsonify({"msg": "ok"}), 200
+
+
+@tdau.route("/add_un_for", methods=['POST'])
 @token_required
 def add_university_foreign(с):
-    u = University_foreign()
-    u.title = request.form.get('title')
-    u.description = request.form.get('description')
-    u.logo = 'none'
-    u.picture = 'none'
-    u.picture_desc = 'none'
-    u.video = 'none'
-    db.session.add(u)
-    db.session.commit()
+    uf = University_foreign(title_uz=request.form.get('title_uz'), title_ru=request.form.get('title_ru'),
+                            title_en=request.form.get('title_en'), description_uz=request.form.get('description_uz'),
+                            description_ru=request.form.get('description_ru'), description_en=request.form.get('description_en'))
+
+    db.session.add(uf)
+    db.session.flush()
+
     logo = request.files.get('logo')
-    picture = request.files.get('picture')
     picture_desc = request.files.get('picture_desc')
-    if request.files.get('videos'):
-        video = request.files.get('videos')
-        video.save(os.path.join('static/uploads/videos/',
-                                "university_foreign_id" + str(u.id) + secure_filename(str(video.filename))))
-        u.video = str(os.path.join('static/uploads/videos/',
-                                   "university_foreign_id" + str(u.id) + secure_filename(str(video.filename))))
-    elif request.form.get('videos'):
-        video_str = request.form.get("videos")
-        u.video = video_str
-    logo.save(os.path.join('static/uploads/images/',
-                           "university_foreign_id" + str(u.id) + secure_filename(str(logo.filename))))
-    picture.save(os.path.join('static/uploads/images/',
-                              "university_foreign_id" + str(u.id) + secure_filename(str(picture.filename))))
-    picture_desc.save(os.path.join('static/uploads/images/', "university_foreign_id" +
-                                   str(u.id) + secure_filename(str(picture_desc.filename))))
+    picture = request.files.get('picture')
+    video_link = request.form.get('videos')
+    video_file = request.files.get('videos')
 
-    u.logo = str(os.path.join('static/uploads/images/',
-                              "university_foreign_id" + str(u.id) + secure_filename(str(logo.filename))))
-    u.picture = str(os.path.join(
-        'static/uploads/images/', "university_foreign_id" + str(u.id) + secure_filename(str(picture.filename))))
-    u.picture_desc = str(os.path.join(
-        'static/uploads/images/', "university_foreign_id" + str(u.id) + secure_filename(str(picture_desc.filename))))
+    if logo and allowed_pic(logo.filename):
+        uf.logo = save_picture(logo,  str(uf.id), 'university_foreign_logo')
+    if picture_desc and allowed_pic(picture_desc.filename):
+        uf.picture_desc = save_picture(picture_desc,  str(uf.id), 'university_foreign_picture_desc')
+    if picture and allowed_pic(picture.filename):
+        uf.picture = save_picture(picture, str(uf.id), 'university_foreign_picture')
+    if video_link:
+        uf.video = video_link
+    if video_file and allowed_pic(video_file.filename):
+        uf.video = save_picture(video_file, str(uf.id), 'video')
 
-    db.session.add(u)
     db.session.commit()
-    ed_t = Education_type_foreign(name="Bachelor", university_id=u.id)
-    ed_t2 = Education_type_foreign(name="Master", university_id=u.id)
+
+    ed_t = Education_type_foreign(name="Bachelor", university_id=uf.id)
+    ed_t2 = Education_type_foreign(name="Master", university_id=uf.id)
     db.session.add(ed_t)
     db.session.add(ed_t2)
     db.session.commit()
-    titles = request.form.get('titles')
-    titles = json.loads(titles)
-    for i in titles:
-        t = Text_foreign(title_or_info=i["title"],
-                         text=i["text"], university_id=u.id)
+    titles_uz = request.form.get('titles_uz')
+    # titles = json.loads(titles)
+    titles_uz = eval(titles_uz)
+    for i in titles_uz:
+        t = Text_foreign_uz(title_or_info=i["title"],
+                         text=i["text"], university_id=uf.id)
+        db.session.add(t)
+        db.session.commit()
+
+    titles_ru = request.form.get('titles_ru')
+    # titles = json.loads(titles)
+    titles_ru = eval(titles_ru)
+    for i in titles_ru:
+        t = Text_foreign_ru(title_or_info=i["title"],
+                            text=i["text"], university_id=uf.id)
+        db.session.add(t)
+        db.session.commit()
+
+    titles_en = request.form.get('titles_en')
+    # titles = json.loads(titles)
+    titles_en = eval(titles_en)
+    for i in titles_en:
+        t = Text_foreign_en(title_or_info=i["title"],
+                            text=i["text"], university_id=uf.id)
         db.session.add(t)
         db.session.commit()
 
     return jsonify({"msg": "ok"}), 200
 
 
-@tdau.route("/edit/university_foreign", methods=['GET', 'POST'])
+@tdau.route("/edit_un_for", methods=['GET', 'POST'])
 @token_required
 def edit_university_foreign(c):
     if request.method == 'POST':
         id = request.form.get("id")
         uni = University_foreign.query.get_or_404(id)
-        if request.form.get("title"):
-            uni.title = request.form.get("title")
-        if request.form.get("picture_desc"):
-            uni.picture_desc = request.form.get("picture_desc")
-        if request.form.get("description"):
-            uni.description = request.form.get("description")
-        if request.form.get("titles"):
-            titles = request.form.get("titles")
-            print("titles in /edit/university_foreign is " + titles)
-            titles = json.loads(titles)
+
+        uni.title_uz = request.form.get('title_uz')
+        uni.title_ru = request.form.get('title_ru')
+        uni.title_en = request.form.get('title_en')
+        uni.description_uz = request.form.get('description_uz')
+        uni.description_ru = request.form.get('description_ru')
+        uni.description_en = request.form.get('description_en')
+        uni.video = request.form.get('videos')
+        logo = request.files.get('logo')
+        video_file = request.files.get('videos')
+        picture = request.files.get('picture')
+        picture_desc = request.files.get('picture_desc')
+        if request.form.get("titles_uz"):
+            titles = request.form.get("titles_uz")
+            titles = eval(titles)
             if len(titles) > 0:
-                for j in Text_foreign.query.filter_by(university_id=id).all():
+                for j in Text_foreign_uz.query.filter_by(university_id=id).all():
                     db.session.delete(j)
                     db.session.commit()
                 for i in titles:
-                    db.session.add(Text_foreign(
+                    db.session.add(Text_foreign_uz(
                         university_id=uni.id, title_or_info=i['title'], text=i['text']))
                     db.session.commit()
+            if request.form.get("titles_ru"):
+                titles = request.form.get("titles_ru")
+                print("titles in /edit/university_foreign is " + titles)
+                titles =eval(titles)
+                if len(titles) > 0:
+                    for j in Text_foreign_ru.query.filter_by(university_id=id).all():
+                        db.session.delete(j)
+                        db.session.commit()
+                    for i in titles:
+                        db.session.add(Text_foreign_ru(
+                            university_id=uni.id, title_or_info=i['title'], text=i['text']))
+                        db.session.commit()
+            if request.form.get("titles_en"):
+                titles = request.form.get("titles_en")
+                print("titles in /edit/university_foreign is " + titles)
+                titles = eval(titles)
+                if len(titles) > 0:
+                    for j in Text_foreign_en.query.filter_by(university_id=id).all():
+                        db.session.delete(j)
+                        db.session.commit()
+                    for i in titles:
+                        db.session.add(Text_foreign_en(
+                            university_id=uni.id, title_or_info=i['title'], text=i['text']))
+                        db.session.commit()
 
-        if request.files.get("logo"):
-            logo = request.files.get("logo")
-            logo.save(os.path.join('static/uploads/images/', "university_foreign_id" +
-                                   str(uni.id) + secure_filename(str(logo.filename))))
-            # delete old logo
-            try:
-                os.remove(os.path.join('static/uploads/images/', uni.logo))
-            except:
-                pass
-            uni.logo = str(os.path.join(
-                'static/uploads/images/', "university_foreign_id" + str(uni.id) + secure_filename(str(logo.filename))))
-        if request.files.get("picture"):
-            picture = request.files.get("picture")
-            picture.save(os.path.join('static/uploads/images/', "university_foreign_id" +
-                                      str(uni.id) + secure_filename(str(picture.filename))))
-            # delete old picture
-            try:
-                os.remove(os.path.join('static/uploads/images/', uni.picture))
-            except:
-                pass
+            if logo and allowed_pic(logo.filename):
+                uni.logo = save_picture(logo,  str(uni.id), 'university_foreign_logo')
 
-            uni.picture = str(os.path.join(
-                'static/uploads/images/',
-                "university_foreign_id" + str(uni.id) + secure_filename(str(picture.filename))))
-        if request.files.get("videos"):
-            video = request.files.get("videos")
-            video.save(os.path.join('static/uploads/videos/', "university_foreign_id" +
-                                    str(uni.id) + secure_filename(str(video.filename))))
-            # delete old video
-            if uni.video != 'none' or not uni.video:
-                try:
-                    os.remove(os.path.join('static/uploads/videos/', uni.video))
-                except:
-                    pass
-            uni.video = str(os.path.join(
-                'static/uploads/videos/', "university_foreign_id" + str(uni.id) + secure_filename(str(video.filename))))
-        elif request.form.get("videos"):
-            video_str = request.form.get("videos")
-            uni.video = video_str
-        if request.files.get("picture_desc"):
-            picture_desc = request.files.get("picture_desc")
-            picture_desc.save(os.path.join('static/uploads/images/', "university_foreign_id" +
-                                           str(uni.id) + secure_filename(str(picture_desc.filename))))
-            # delete old picture_desc
-            if uni.picture_desc != 'none' or not uni.picture_desc:
-                try:
-                    os.remove(os.path.join('static/uploads/images/', uni.picture_desc))
-                except:
-                    pass
-            uni.picture_desc = str(os.path.join(
-                'static/uploads/images/',
-                "university_foreign_id" + str(uni.id) + secure_filename(str(picture_desc.filename))))
-        db.session.commit()
+            if picture and allowed_pic(picture.filename):
+                uni.picture = save_picture(picture,  str(uni.id), 'university_foreign_picture')
+            if picture and allowed_pic(picture_desc.filename):
+                uni.picture_desc = save_picture(picture_desc, str(uni.id), 'university_foreign_picture_desc')
+            if video_file and allowed_pic(video_file.filename):
+                uni.video = save_picture(video_file, str(uni.id), 'video')
+            db.session.commit()
+
         return jsonify({"msg": "ok"})
     id = request.args.get('id')
     uni = University_foreign.query.get_or_404(id)
     return jsonify(uni.format())
 
 
-@tdau.route('/delete/university_foreign', methods=['POST'])
+@tdau.route('/delete/university_foreign', methods=['GET'])
 @token_required
 def delete_university_foreign(c):
-    id = request.form.get("id")
+    id = request.args.get("id")
     uni = University_foreign.query.get_or_404(id)
+    if uni.logo != None and uni.picture != None and uni.picture_desc !=None:
+        db.session.delete(uni)
+        full_path = os.path.join(current_app.root_path, 'static', 'university_foreign', str(uni.id))
+        shutil.rmtree(full_path)
+        db.session.commit()
+        return jsonify({'msg': 'deleted!'}, 200)
     db.session.delete(uni)
     db.session.commit()
-    return jsonify({"msg": "ok"})
+    return jsonify({"msg": "deleted"}, 200)
 
 
 @tdau.route('/add_billboard', methods=['POST'])
 @token_required
 def add_billboard(c):
     if request.method == 'POST':
-        content = Billboard(title=request.form.get('title'), picture=request.files.get(
-            'picture'), desc=request.form.get('desc'), date=request.form.get('date'), time=request.form.get('time'))
+        content = Billboard(title_uz=request.form.get('title_uz'), title_ru=request.form.get('title_ru'), title_en=request.form.get('title_en'), picture=request.files.get(
+            'picture'), desc_uz=request.form.get('desc_uz'), desc_en=request.form.get('desc_en'), desc_ru=request.form.get('desc_ru'), date=request.form.get('date'), time=request.form.get('time'))
 
         # Grab Image name
         pic_filename = secure_filename(content.picture.filename)
@@ -1323,8 +1528,10 @@ def add_billboard(c):
 
         db.session.add(content)
         db.session.commit()
-
-        saver.save(os.path.join('static/uploads/images/', pic_name))
+        full_path = os.path.join(current_app.root_path, 'static', 'uploads', 'images')
+        if not os.path.exists(full_path):
+            os.makedirs(full_path)
+        saver.save(os.path.join(full_path, pic_name))
 
         return jsonify({"msg": "ok"})
 
@@ -1349,11 +1556,15 @@ def edit_bill():
 
     jsonf = {
         'id': bill.id,
-        'title_bill': bill.title,
+        'title_bill_uz': bill.title_uz,
+        'title_bill_ru': bill.title_ru,
+        'title_bill_en': bill.title_en,
         'date_bill': bill.date,
         'time_bill': bill.time,
-        'bill_desc': bill.desc,
-        'picture_bill': bill.picture,
+        'bill_desc_uz': bill.desc_uz,
+        'bill_desc_en': bill.desc_en,
+        'bill_desc_ru': bill.desc_ru,
+        'picture_bill': f'static/uploads/images/{bill.picture}',
 
     }
 
@@ -1364,15 +1575,19 @@ def edit_bill():
 def update_billboard():
     if request.method == 'POST':
         id = request.form.get('id')
-        bill_edit = Billboard.query.get_or_404(id)
+        bill_edit = Billboard.query.get(id)
+        print(bill_edit.id)
         title = request.form.get('title')
         desc = request.form.get('desc')
         date = request.form.get('date')
         time = request.form.get('time')
-        if title:
-            bill_edit.title = request.form.get('title')
-        if desc:
-            bill_edit.desc = request.form.get('desc')
+
+        bill_edit.title_uz = request.form.get('title_uz')
+        bill_edit.title_ru = request.form.get('title_ru')
+        bill_edit.title_en = request.form.get('title_en')
+        bill_edit.desc_uz = request.form.get('desc_uz')
+        bill_edit.desc_ru = request.form.get('desc_ru')
+        bill_edit.desc_en = request.form.get('desc_en')
         if date:
             bill_edit.date = request.form.get('date')
         if time:
@@ -1394,7 +1609,11 @@ def update_billboard():
 
             db.session.add(bill_edit)
             db.session.commit()
-            saver.save(os.path.join('static/uploads/images/', pic_name))
+            full_path = os.path.join(current_app.root_path, 'static', 'uploads', 'images')
+            if not os.path.exists(full_path):
+                os.makedirs(full_path)
+            saver.save(os.path.join(full_path, pic_name))
+
         db.session.add(bill_edit)
         db.session.commit()
 
@@ -1454,15 +1673,24 @@ def excel():
 @token_required
 def add_rector_msg(c):
     print('I AM HERE')
+
+    # exist = Post.query.first()
+    #
+    # if exist != None:
+    #     db.session.delete(exist)
+    #     db.session.commit()
+
     rector_name = request.form.get('rector_name')
     description = request.form.get('description')
     add_infos = request.form.get('add_infos')
     work_acts = request.form.get('work_acts')
-    add_infos = json.loads(add_infos)
-    work_acts = json.loads(work_acts)
+    # add_infos = json.loads(add_infos)
+    # work_acts = json.loads(work_acts)
     post = Post(
         rector_name=rector_name,
-        description=description
+        description_uz=request.form.get('desc_uz'),
+        description_ru=request.form.get('desc_ru'),
+        description_en=request.form.get('desc_en')
     )
     db.session.add(post)
 
@@ -1475,8 +1703,10 @@ def add_rector_msg(c):
 
     db.session.commit()
 
-    for add_info in add_infos:
-        post_add_info = Additional_Info_Meta(
+    title_uz = request.form.get('title_uz')
+    title_uz = eval(title_uz)
+    for add_info in title_uz:
+        post_add_info = Additional_Info_Meta_Uz(
             post_id=post.id,
             key=add_info['title'],
             value=add_info['text']
@@ -1484,8 +1714,54 @@ def add_rector_msg(c):
         db.session.add(post_add_info)
         db.session.commit()
 
-    for work_act in work_acts:
-        post_work_act = Work_Activity_Meta(
+    title_ru = request.form.get('title_ru')
+    title_ru = eval(title_ru)
+    for add_info in title_ru:
+        post_add_info = Additional_Info_Meta_Ru(
+            post_id=post.id,
+            key=add_info['title'],
+            value=add_info['text']
+        )
+        db.session.add(post_add_info)
+        db.session.commit()
+
+    title_en = request.form.get('title_en')
+    title_en = eval(title_en)
+    for add_info in title_en:
+        post_add_info = Additional_Info_Meta_En(
+            post_id=post.id,
+            key=add_info['title'],
+            value=add_info['text']
+        )
+        db.session.add(post_add_info)
+        db.session.commit()
+
+    work_uz = request.form.get('work_uz')
+    work_uz = eval(work_uz)
+    for work_act in work_uz:
+        post_work_act = Work_Activity_Meta_Uz(
+            post_id=post.id,
+            key=work_act['title'],
+            value=work_act['text']
+        )
+        db.session.add(post_work_act)
+        db.session.commit()
+
+    work_en = request.form.get('work_en')
+    work_en = eval(work_en)
+    for work_act in work_en:
+        post_work_act = Work_Activity_Meta_Ru(
+            post_id=post.id,
+            key=work_act['title'],
+            value=work_act['text']
+        )
+        db.session.add(post_work_act)
+        db.session.commit()
+
+    work_en = request.form.get('work_en')
+    work_en = eval(work_en)
+    for work_act in work_en:
+        post_work_act = Work_Activity_Meta_En(
             post_id=post.id,
             key=work_act['title'],
             value=work_act['text']
@@ -1498,10 +1774,30 @@ def add_rector_msg(c):
 
 @tdau.route("/get_rector_msg", methods=['GET'])
 def get_rector_msg():
-    last_id = Post.query.order_by(Post.id.desc()).first().id
-    post = Post.query.get(last_id).format()
+    lang = request.args.get('lang')
 
-    return jsonify([post])
+    if lang == 'uz':
+        last_id = Post.query.order_by(Post.id.desc()).first().id
+        post = Post.query.get(last_id).format_uz()
+        return jsonify([post])
+    if lang == 'ru':
+        last_id = Post.query.order_by(Post.id.desc()).first().id
+        post = Post.query.get(last_id).format_ru()
+        return jsonify([post])
+    if lang == 'en':
+        last_id = Post.query.order_by(Post.id.desc()).first().id
+        post = Post.query.get(last_id).format_en()
+        return jsonify([post])
+    if lang == None:
+        exist = Post.query.order_by(Post.id.desc()).first()
+        if exist == None:
+            return jsonify([{'msg': 'empty'}])
+        last_id = Post.query.order_by(Post.id.desc()).first().id
+        post = Post.query.get(last_id).format()
+        return jsonify([post])
+
+
+
 
 
 @tdau.route('/get_faculty', methods=['POST'])
@@ -1515,8 +1811,12 @@ def get_faculty():
 @tdau.route("/add_structure", methods=['POST'])
 @token_required
 def add_structure(c):
-    fullname = request.form.get('fullname')
-    description = request.form.get('description')
+    fullname_uz = request.form.get('fullname')
+    # fullname_ru = request.form.get('fullname_ru')
+    # fullname_en = request.form.get('fullname_en')
+    description_uz = request.form.get('description_uz')
+    description_en = request.form.get('description_en')
+    description_ru = request.form.get('description_ru')
     role = request.form.get('role')
     email = request.form.get('email')
     phone = request.form.get('phone')
@@ -1524,8 +1824,10 @@ def add_structure(c):
 
     st = Structure(
         role=role,
-        fullname=fullname,
-        desc=description,
+        fullname_uz=fullname_uz,
+        desc_uz=description_uz,
+        desc_ru=description_ru,
+        desc_en=description_en,
         email=email,
         phone=phone,
         reception_time=reception_time
@@ -1544,16 +1846,20 @@ def add_structure(c):
 @tdau.route("/add_rect_structure", methods=['POST'])
 @token_required
 def add_rect_structure(c):
-    fullname = request.form.get('fullname')
-    description = request.form.get('description')
+    fullname_uz = request.form.get('fullname')
+    description_uz = request.form.get('description_uz')
+    description_en = request.form.get('description_en')
+    description_ru = request.form.get('description_ru')
     email = request.form.get('email')
     phone = request.form.get('phone')
     reception_time = request.form.get('reception_time')
 
     st = Structure(
         role='rector',
-        fullname=fullname,
-        desc=description,
+        fullname_uz=fullname_uz,
+        desc_uz=description_uz,
+        desc_ru=description_ru,
+        desc_en=description_en,
         email=email,
         phone=phone,
         reception_time=reception_time
@@ -1571,18 +1877,67 @@ def add_rect_structure(c):
 
 @tdau.route("/get_structure", methods=['GET'])
 def get_structure():
-    st = Structure.query.filter(Structure.role != 'rector').all()
-    st = [x.format() for x in st]
+    lang = request.args.get('lang')
 
-    return jsonify(st)
+    if lang == 'uz':
+        st = Structure.query.filter(Structure.role != 'rector').all()
+        st = [x.format_uz() for x in st]
+
+        return jsonify(st)
+
+    if lang == 'ru':
+        st = Structure.query.filter(Structure.role != 'rector').all()
+        st = [x.format_ru() for x in st]
+        return jsonify(st)
+
+    if lang == 'en':
+        st = Structure.query.filter(Structure.role != 'rector').all()
+        st = [x.format_en() for x in st]
+        return jsonify(st)
+
+    if lang == None:
+
+        st = Structure.query.filter(Structure.role != 'rector').all()
+        st = [x.format() for x in st]
+
+        return jsonify(st)
 
 
 @tdau.route("/get_rect_structure", methods=['GET'])
 def get_rect_structure():
-    last_id = Structure.query.filter_by(role='rector').order_by(Structure.id.desc()).first().id
-    st = Structure.query.get(last_id).format()
 
-    return jsonify(st)
+
+    lang = request.args.get('lang')
+
+    if lang == 'uz':
+        last_id = Structure.query.filter_by(role='rector').order_by(Structure.id.desc()).first().id
+        st = Structure.query.get(last_id).format_uz()
+
+        return jsonify(st)
+
+    if lang == 'ru':
+        last_id = Structure.query.filter_by(role='rector').order_by(Structure.id.desc()).first().id
+        st = Structure.query.get(last_id).format_ru()
+
+        return jsonify(st)
+
+    if lang == 'en':
+        last_id = Structure.query.filter_by(role='rector').order_by(Structure.id.desc()).first().id
+        st = Structure.query.get(last_id).format_en()
+
+        return jsonify(st)
+
+    if lang == None:
+        exist = Structure.query.filter_by(role='rector').order_by(Structure.id.desc()).first()
+        if  exist == None:
+            return jsonify({'msg': 'empty'})
+
+        last_id = Structure.query.filter_by(role='rector').order_by(Structure.id.desc()).first().id
+
+        st = Structure.query.get(last_id).format()
+
+        return jsonify(st)
+
 
 
 @tdau.route("/edit_structure", methods=['GET', 'POST'])
@@ -1597,13 +1952,29 @@ def edit_structure(c):
                     photo = request.files['photo']
                     st.photo = hash_and_save(photo, 'structure')
 
-            if st.fullname:
+            if st.fullname_uz:
                 fullname = request.form.get('fullname')
-                st.fullname = fullname
+                st.fullname_uz = fullname
 
-            if st.desc:
-                description = request.form.get('description')
-                st.desc = description
+            # if st.fullname_ru:
+            #     fullname = request.form.get('fullname_ru')
+            #     st.fullname_ru = fullname
+            #
+            # if st.fullname_en:
+            #     fullname = request.form.get('fullname_en')
+            #     st.fullname_en = fullname
+
+            if st.desc_uz:
+                description = request.form.get('description_uz')
+                st.desc_uz = description
+
+            if st.desc_ru:
+                description = request.form.get('description_ru')
+                st.desc_ru = description
+
+            if st.desc_en:
+                description = request.form.get('description_en')
+                st.desc_en = description
 
             if st.email:
                 email = request.form.get('email')
@@ -1638,16 +2009,28 @@ def delete_structure(c):
 @tdau.route("/write_about_us", methods=['POST'])
 @token_required
 def write_about_us(c):
-    desc1 = request.form.get('desc1')
-    desc2 = request.form.get('desc2')
-    title = request.form.get('title')
+    desc1_uz = request.form.get('desc1_uz')
+    desc1_ru = request.form.get('desc1_ru')
+    desc1_en = request.form.get('desc1_en')
+    desc2_uz = request.form.get('desc2_uz')
+    desc2_ru = request.form.get('desc2_ru')
+    desc2_en = request.form.get('desc2_en')
+    title_uz = request.form.get('title_uz')
+    title_en = request.form.get('title_en')
+    title_ru = request.form.get('title_ru')
     link = request.form.get('link')
 
     if not About_Page.query.all():
         ap = About_Page(
-            desc1=desc1,
-            desc2=desc2,
-            title=title,
+            desc1_uz=desc1_uz,
+            desc1_ru=desc1_ru,
+            desc1_en=desc1_en,
+            desc2_uz=desc2_uz,
+            desc2_en=desc2_en,
+            desc2_ru=desc2_ru,
+            title_uz=title_uz,
+            title_ru=title_ru,
+            title_en=title_en,
             link=link
         )
         db.session.add(ap)
@@ -1655,14 +2038,32 @@ def write_about_us(c):
     else:
         ap = About_Page.query.first()
 
-        if ap.desc1:
-            ap.desc1 = desc1
+        if ap.desc1_uz:
+            ap.desc1_uz = desc1_uz
 
-        if ap.desc2:
-            ap.desc2 = desc2
+        if ap.desc1_ru:
+            ap.desc1_ru = desc1_ru
 
-        if ap.title:
-            ap.title = title
+        if ap.desc1_en:
+            ap.desc1_en = desc1_en
+
+        if ap.desc2_uz:
+            ap.desc2_uz = desc2_uz
+
+        if ap.desc2_ru:
+            ap.desc2_ru = desc2_ru
+
+        if ap.desc2_en:
+            ap.desc2_en = desc2_en
+
+        if ap.title_uz:
+            ap.title_uz = title_uz
+
+        if ap.title_ru:
+            ap.title_ru = title_ru
+
+        if ap.title_en:
+            ap.title_en = title_en
 
         if ap.link:
             ap.link = link
@@ -1684,19 +2085,31 @@ def write_about_us(c):
 @token_required
 def add_branch(c):
     name = request.form.get('name')
-    desc = request.form.get('desc')
+    desc_uz = request.form.get('desc_uz')
+    desc_ru = request.form.get('desc_ru')
+    desc_en = request.form.get('desc_en')
     rector_name = request.form.get('rector_name')
-    rector_reception = request.form.get('rector_reception')
-    rector_address = request.form.get('rector_address')
+    rector_reception_uz = request.form.get('rector_reception_uz')
+    rector_reception_ru = request.form.get('rector_reception_ru')
+    rector_reception_en = request.form.get('rector_reception_en')
+    rector_address_uz = request.form.get('rector_address_uz')
+    rector_address_ru = request.form.get('rector_address_ru')
+    rector_address_en = request.form.get('rector_address_en')
     rector_phone = request.form.get('rector_phone')
     rector_email = request.form.get('rector_email')
 
     br = Branch(
         name=name,
-        desc=desc,
+        desc_uz=desc_uz,
+        desc_ru=desc_ru,
+        desc_en=desc_en,
         rector_name=rector_name,
-        rector_reception=rector_reception,
-        rector_address=rector_address,
+        rector_reception_uz=rector_reception_uz,
+        rector_reception_ru=rector_reception_ru,
+        rector_reception_en=rector_reception_en,
+        rector_address_uz=rector_address_uz,
+        rector_address_en=rector_address_en,
+        rector_address_ru=rector_address_ru,
         rector_phone=rector_phone,
         rector_email=rector_email
     )
@@ -1726,12 +2139,20 @@ def add_branch(c):
 @tdau.route("/add_prog", methods=['POST'])
 @token_required
 def add_prog(c):
-    name = request.form.get('name')
-    desc = request.form.get('desc')
+    name_uz = request.form.get('name_uz')
+    name_ru = request.form.get('name_ru')
+    name_en = request.form.get('name_en')
+    desc_uz = request.form.get('desc_uz')
+    desc_en = request.form.get('desc_en')
+    desc_ru = request.form.get('desc_ru')
 
     pr = Programme(
-        name=name,
-        desc=desc
+        name_uz=name_uz,
+        name_ru=name_ru,
+        name_en=name_en,
+        desc_ru=desc_ru,
+        desc_uz=desc_uz,
+        desc_en=desc_en,
     )
     db.session.add(pr)
 
@@ -1747,16 +2168,28 @@ def add_prog(c):
 @tdau.route("/add_fac", methods=['POST'])
 @token_required
 def add_fac(c):
-    name = request.form.get('name')
-    desc = request.form.get('desc')
+    name_uz = request.form.get('name_uz')
+    name_ru = request.form.get('name_ru')
+    name_en = request.form.get('name_en')
+    desc_uz = request.form.get('desc_uz')
+    desc_ru = request.form.get('desc_ru')
+    desc_en = request.form.get('desc_en')
     link = request.form.get('link')
     pr_id = request.form.get('pr_id')
-    metas = request.form.get('metas')
-    metas = json.loads(metas)
+    metas_uz = request.form.get('metas_uz')
+    metas_uz = eval(metas_uz)
+    metas_en = request.form.get('metas_en')
+    metas_en = eval(metas_en)
+    metas_ru = request.form.get('metas_ru')
+    metas_ru = eval(metas_ru)
 
     fc = Faculty_Data(
-        name=name,
-        desc=desc,
+        name_uz=name_uz,
+        name_ru=name_ru,
+        name_en=name_en,
+        desc_uz=desc_uz,
+        desc_en=desc_en,
+        desc_ru=desc_ru,
         link=link,
         programme_id=pr_id
     )
@@ -1769,8 +2202,26 @@ def add_fac(c):
 
     db.session.commit()
 
-    for meta in metas:
-        fc_meta = Faculty_Data_Meta(
+    for meta in metas_uz:
+        fc_meta = Faculty_Data_Meta_Uz(
+            faculty_data_id=fc.id,
+            key=meta['title'],
+            value=meta['text']
+        )
+        db.session.add(fc_meta)
+        db.session.commit()
+
+    for meta in metas_ru:
+        fc_meta = Faculty_Data_Meta_Ru(
+            faculty_data_id=fc.id,
+            key=meta['title'],
+            value=meta['text']
+        )
+        db.session.add(fc_meta)
+        db.session.commit()
+
+    for meta in metas_en:
+        fc_meta = Faculty_Data_Meta_En(
             faculty_data_id=fc.id,
             key=meta['title'],
             value=meta['text']
@@ -1785,9 +2236,22 @@ def add_fac(c):
 
 @tdau.route("/about_us", methods=['GET'])
 def about_us():
+    lang = request.args.get('lang')
     au = About_Page.query.first()
 
-    return jsonify(au)
+    if lang == 'ru':
+        return au.format_ru()
+
+    if lang == 'uz':
+        return au.format_uz()
+
+    if lang == 'en':
+        return au.format_en()
+
+    if lang == None:
+        if au:
+            return jsonify(au.format())
+    return jsonify({'msg': 'empty'}, 200)
 
 
 @tdau.route("/all_branches", methods=['GET'])
@@ -1803,6 +2267,17 @@ def all_branches():
 @tdau.route("/get_branch", methods=['GET'])
 def get_branch():
     id = request.args.get('id')
+    lang = request.args.get('lang')
+
+    if lang == 'uz':
+        br = Branch.query.get(int(id)).format_uz()
+        return jsonify(br)
+    if lang == 'ru':
+        br = Branch.query.get(int(id)).format_ru()
+        return jsonify(br)
+    if lang == 'en':
+        br = Branch.query.get(int(id)).format_en()
+        return jsonify(br)
     br = Branch.query.get(int(id)).format()
 
     return jsonify(br)
@@ -1821,6 +2296,16 @@ def all_progs():
 @tdau.route("/get_prog", methods=['GET'])
 def get_prog():
     id = request.args.get('id')
+    lang = request.args.get('lang')
+    if lang == 'ru':
+        return Programme.query.get(int(id)).format_ru()
+
+    if lang == 'uz':
+        return Programme.query.get(int(id)).format_uz()
+
+    if lang == 'en':
+        return Programme.query.get(int(id)).format_en()
+
     pr = Programme.query.get(int(id)).format()
 
     return jsonify(pr)
@@ -1828,17 +2313,45 @@ def get_prog():
 
 @tdau.route("/all_facs", methods=['GET'])
 def all_facs():
+    lang = request.args.get('lang')
     fc = Faculty_Data.query.all()
-    data = []
-    for f in fc:
-        data.append(f.format())
 
-    return jsonify(data)
+    # data = []
+    if lang == 'uz':
+        # for f in fc:
+        #     data.append(f.format_uz())
+        return jsonify([ x.format_uz() for x in fc])
+    if lang == 'ru':
+        # for f in fc:
+        #     data.append(f.format_ru())
+        return jsonify([x.format_ru() for x in fc])
+    if lang == 'en':
+        # for f in fc:
+        #     data.append(f.format_en())
+        return jsonify([x.format_en() for x in fc])
+    # for f in fc:
+    #     data.append(f.format())
+
+    return jsonify([ x.format() for x in fc])
 
 
 @tdau.route("/get_fac", methods=['GET'])
 def get_fac():
     id = request.args.get('id')
+    lang = request.args.get('lang')
+
+    if lang == 'ru':
+        fc = Faculty_Data.query.get(int(id)).format_ru()
+        return jsonify(fc)
+
+    if lang == 'uz':
+        fc = Faculty_Data.query.get(int(id)).format_uz()
+        return jsonify(fc)
+
+    if lang == 'en':
+        fc = Faculty_Data.query.get(int(id)).format_en()
+        return jsonify(fc)
+
     fc = Faculty_Data.query.get(int(id)).format()
 
     return jsonify(fc)
@@ -1856,21 +2369,45 @@ def edit_branch(c):
         name = request.form.get('name')
         br.name = name
 
-    if br.desc:
-        desc = request.form.get('desc')
-        br.desc = desc
+    if br.desc_uz:
+        desc = request.form.get('desc_uz')
+        br.desc_uz = desc
+
+    if br.desc_ru:
+        desc = request.form.get('desc_ru')
+        br.desc_ru = desc
+
+    if br.desc_en:
+        desc = request.form.get('desc_en')
+        br.desc_en = desc
 
     if br.rector_name:
         rector_name = request.form.get('rector_name')
         br.rector_name = rector_name
 
-    if br.rector_reception:
-        rector_reception = request.form.get('rector_reception')
-        br.rector_reception = rector_reception
+    if br.rector_reception_uz:
+        rector_reception = request.form.get('rector_reception_uz')
+        br.rector_reception_uz = rector_reception
 
-    if br.rector_address:
-        rector_address = request.form.get('rector_address')
-        br.rector_address = rector_address
+    if br.rector_reception_ru:
+        rector_reception = request.form.get('rector_reception_ru')
+        br.rector_reception_ru = rector_reception
+
+    if br.rector_reception_en:
+        rector_reception = request.form.get('rector_reception_en')
+        br.rector_reception_en = rector_reception
+
+    if br.rector_address_uz:
+        rector_address = request.form.get('rector_address_uz')
+        br.rector_address_uz = rector_address
+
+    if br.rector_address_ru:
+        rector_address = request.form.get('rector_address_ru')
+        br.rector_address_ru = rector_address
+
+    if br.rector_address_en:
+        rector_address = request.form.get('rector_address_en')
+        br.rector_address_en = rector_address
 
     if br.rector_phone:
         rector_phone = request.form.get('rector_phone')
@@ -1920,16 +2457,34 @@ def delete_branch(c):
 @token_required
 def edit_prog(c):
     id = request.form.get('id')
+    print(id)
+    pr = Programme.query.get(id)
 
-    pr = Programme.query.get(int(id))
+    print(pr.id)
 
-    if pr.name:
-        name = request.form.get('name')
-        pr.name = name
+    if pr.name_uz:
+        name = request.form.get('name_uz')
+        pr.name_uz = name
 
-    if pr.desc:
-        desc = request.form.get('desc')
-        pr.desc = desc
+    if pr.name_ru:
+        name = request.form.get('name_ru')
+        pr.name_ru = name
+
+    if pr.name_en:
+        name = request.form.get('name_en')
+        pr.name_en = name
+
+    if pr.desc_uz:
+        desc = request.form.get('desc_uz')
+        pr.desc_uz = desc
+
+    if pr.desc_ru:
+        desc = request.form.get('desc_ru')
+        pr.desc_ru = desc
+
+    if pr.desc_en:
+        desc = request.form.get('desc_en')
+        pr.desc_en = desc
 
     if pr.photo:
         if 'photo' in request.files:
@@ -1957,18 +2512,38 @@ def delete_prog(c):
 def edit_fac(c):
     id = request.form.get('id')
     pr_id = request.form.get('pr_id')
-    metas = request.form.get('metas')
-    metas = json.loads(metas)
+    metas_uz = request.form.get('metas_uz')
+    metas_uz = eval(metas_uz)
+    metas_en = request.form.get('metas_en')
+    metas_en = eval(metas_en)
+    metas_ru = request.form.get('metas_ru')
+    metas_ru = eval(metas_ru)
 
     fc = Faculty_Data.query.get(int(id))
 
-    if fc.name:
-        name = request.form.get('name')
-        fc.name = name
+    if fc.name_uz:
+        name = request.form.get('name_uz')
+        fc.name_uz = name
 
-    if fc.desc:
-        desc = request.form.get('desc')
-        fc.desc = desc
+    if fc.name_ru:
+        name = request.form.get('name_ru')
+        fc.name_ru = name
+
+    if fc.name_en:
+        name = request.form.get('name_en')
+        fc.name_en = name
+
+    if fc.desc_uz:
+        desc = request.form.get('desc_uz')
+        fc.desc_uz = desc
+
+    if fc.desc_en:
+        desc = request.form.get('desc_en')
+        fc.desc_en = desc
+
+    if fc.desc_ru:
+        desc = request.form.get('desc_ru')
+        fc.desc_ru = desc
 
     if fc.link:
         link = request.form.get('link')
@@ -1980,12 +2555,41 @@ def edit_fac(c):
 
     if fc.photo:
         if 'photo' in request.files:
-            photo = request.files['photo']
+            photo = request.files.get('photo')
             fc.photo = hash_and_save(photo, 'structure')
 
-    if fc.faculty_data_metas:
-        for meta in metas:
-            fc_meta = Faculty_Data_Meta(
+    if fc.faculty_data_metas_uz:
+        for j in Faculty_Data_Meta_Uz.query.filter_by(faculty_data_id=id).all():
+            db.session.delete(j)
+            db.session.commit()
+        for meta in metas_uz:
+            fc_meta = Faculty_Data_Meta_Uz(
+                faculty_data_id=fc.id,
+                key=meta['title'],
+                value=meta['text']
+            )
+            db.session.add(fc_meta)
+            db.session.commit()
+
+    if fc.faculty_data_metas_ru:
+        for j in Faculty_Data_Meta_Ru.query.filter_by(faculty_data_id=id).all():
+            db.session.delete(j)
+            db.session.commit()
+        for meta in metas_ru:
+            fc_meta = Faculty_Data_Meta_Ru(
+                faculty_data_id=fc.id,
+                key=meta['title'],
+                value=meta['text']
+            )
+            db.session.add(fc_meta)
+            db.session.commit()
+
+    if fc.faculty_data_metas_en:
+        for j in Faculty_Data_Meta_En.query.filter_by(faculty_data_id=id).all():
+            db.session.delete(j)
+            db.session.commit()
+        for meta in metas_en:
+            fc_meta = Faculty_Data_Meta_En(
                 faculty_data_id=fc.id,
                 key=meta['title'],
                 value=meta['text']
@@ -2106,25 +2710,35 @@ def addDeegres(c):
         upper_img = request.files.get('upper_img')
         bottom_img = request.files.get('bottom_img')
         req_degree = request.form.get('degree')
-        exist_degrees = Degrees.query.filter_by(degree=req_degree)
+        lang = request.form.get('lang')
+        exist_degree = Degrees.query.filter_by(degree=req_degree)
+        print(lang)
         list_d = []
-        for i in exist_degrees:
+        for i in exist_degree:
             list_d.append(i)
+        print(list_d)
 
         if len(list_d) > 0:
-            exist_degrees = Degrees.query.filter_by(degree=req_degree).first()
-            if exist_degrees.degree == 'bachelor':
+
+            exist_degrees = Degrees.query.filter_by(degree=req_degree, language=lang).first()
+
+            if exist_degrees == None:
+
+                exist_degrees = Degrees.query.filter_by(degree=req_degree).first()
+
+            if exist_degrees.degree == 'bachelor' and exist_degrees.language == lang:
+
                 db.session.delete(exist_degrees)
                 full_path = os.path.join(current_app.root_path, 'static', 'degrees', str(exist_degrees.id))
                 shutil.rmtree(full_path)
                 db.session.commit()
-            if exist_degrees.degree == 'master':
+            if exist_degrees.degree == 'master'and exist_degrees.language == lang:
                 db.session.delete(exist_degrees)
                 db.session.delete(exist_degrees)
                 full_path = os.path.join(current_app.root_path, 'static', 'degrees', str(exist_degrees.id))
                 shutil.rmtree(full_path)
                 db.session.commit()
-            if exist_degrees.degree == 'phd':
+            if exist_degrees.degree == 'phd' and exist_degrees.language == lang:
                 db.session.delete(exist_degrees)
                 db.session.delete(exist_degrees)
                 full_path = os.path.join(current_app.root_path, 'static', 'degrees', str(exist_degrees.id))
@@ -2133,7 +2747,7 @@ def addDeegres(c):
         degree = Degrees(
             about=request.form.get('about'), university_name=request.form.get('name'),
             video_link=request.form.get('video'),
-            degree=req_degree)
+            degree=req_degree, language=lang)
         db.session.add(degree)
         db.session.flush()
 
@@ -2155,8 +2769,34 @@ def addDeegres(c):
         return jsonify({'msg': 'Added!'}, 200)
 
 
+@tdau.route('/get_bl')
+def getBL():
+    lang = request.args.get('lang')
+    bach = Degrees.query.filter_by(degree='bachelor', language=lang).all()
+
+    return jsonify([x.format() for x in bach])
+
+
+@tdau.route('/get_ml')
+def getML():
+    lang = request.args.get('lang')
+    bach = Degrees.query.filter_by(degree='master', language=lang).all()
+
+    return jsonify([x.format() for x in bach])
+
+
+@tdau.route('/get_pl')
+def getPL():
+    lang = request.args.get('lang')
+    bach = Degrees.query.filter_by(degree='phd', language=lang).all()
+
+    return jsonify([x.format() for x in bach])
+
+
 @tdau.route('/get_b')
 def getB():
+
+
     bach = Degrees.query.filter_by(degree='bachelor').all()
 
     return jsonify([x.format() for x in bach])
@@ -2175,16 +2815,18 @@ def getP():
 
     return jsonify([x.format() for x in bach])
 
-
 @tdau.route('/delete_d')
 @token_required
 def deleteDegree(c):
     id = request.args.get('id')
     degree = Degrees.query.get_or_404(id)
-
+    if degree.bottom_img != None and degree.upper_img != None:
+        db.session.delete(degree)
+        full_path = os.path.join(current_app.root_path, 'static', 'degrees', str(degree.id))
+        shutil.rmtree(full_path)
+        db.session.commit()
+        return jsonify({'msg': 'deleted'}, 200)
     db.session.delete(degree)
-    full_path = os.path.join(current_app.root_path, 'static', 'degrees', str(degree.id))
-    shutil.rmtree(full_path)
     db.session.commit()
     return jsonify({'msg': 'deleted'}, 200)
 
@@ -2204,6 +2846,7 @@ def updateDegree(c):
         degree_post.university_name = request.form.get('name')
         degree_post.video_link = request.form.get('video')
         degree_post.degree = request.form.get('degree')
+        degree_post.language = request.form.get('lang')
         if request.files.get('upper_img') and allowed_pic(upper_img.filename):
             degree_post.upper_img = save_picture(upper_img, degree_post.id, 'upper_img_page')
 
@@ -2240,8 +2883,9 @@ def addNewspage(c):
     # if old_page:
     #     db.session.delete(old_page)
     #     db.session.commit()
-    news_page = NewsPage(title=request.form.get('title'), desc=request.form.get('desc'),
-                         page=request.form.get('page'))
+    news_page = NewsPage(title_uz=request.form.get('title_uz'), title_ru=request.form.get('title_ru'), title_en=request.form.get('title_en'),
+                         desc_uz=request.form.get('desc_uz'), desc_ru=request.form.get('desc_ru'), desc_en=request.form.get('desc_en'),
+                         page=request.form.get('page'), language=request.form.get('lang'))
     db.session.add(news_page)
     db.session.flush()
 
@@ -2269,9 +2913,15 @@ def updateNewsPage(c):
     img = request.files.get('img')
     news_page = NewsPage.query.get(id)
 
-    news_page.title = request.form.get('title')
-    news_page.desc = request.form.get('desc')
+    news_page.title_uz = request.form.get('title_uz')
+    news_page.title_ru = request.form.get('title_ru')
+    news_page.title_en = request.form.get('title_en')
+
+    news_page.desc_uz = request.form.get('desc_uz')
+    news_page.desc_ru = request.form.get('desc_ru')
+    news_page.desc_en = request.form.get('desc_en')
     news_page.page = request.form.get('page')
+    # news_page.language = request.form.get('lang')
     if img and allowed_pic(img.filename):
         news_page.img = save_picture(img, news_page.id, 'news_page')
     db.session.commit()
@@ -2286,37 +2936,48 @@ def UpdateNpGet():
 
 @tdau.route('/delete_newspage')
 @token_required
-def delete(c):
+def delete_newspage(c):
     id = request.args.get('id')
     news_page = NewsPage.query.get(id)
-
+    if news_page.img != None:
+        db.session.delete(news_page)
+        full_path = os.path.join(current_app.root_path, 'static', 'news_page', str(news_page.id))
+        shutil.rmtree(full_path)
+        db.session.commit()
+        return jsonify({'msg': 'deleted!'}, 200)
     db.session.delete(news_page)
-    full_path = os.path.join(current_app.root_path, 'static', 'news_page', str(news_page.id))
-    shutil.rmtree(full_path)
     db.session.commit()
     return jsonify({'msg': 'deleted!'}, 200)
 
 
-def inputFilter(filter_name):
-    return filter_name
+# def inputFilter(filter_name):
+#     return filter_name
 
 
 @tdau.route('/conferences', methods=['GET'])
 def conferences():
+    lang = request.args.get('lang')
     pages = NewsPage.query.filter_by(page='conference').all()
     list_pages = []
+    print(list_pages)
     for page in pages:
         list_pages.append(page.id)
     print(list_pages)
     last_page = list_pages[-1]
     print(last_page)
     new_page = NewsPage.query.get(last_page)
-
-    return new_page.format(new_page.page)
-
+    if lang == 'uz':
+        return new_page.format_uz(new_page.page, lang)
+    if lang == 'ru':
+        return new_page.format_ru(new_page.page, lang)
+    if lang == 'en':
+        return new_page.format_en(new_page.page, lang)
+    if lang == None:
+        return new_page.format(new_page.page, lang)
 
 @tdau.route('/science', methods=['GET'])
 def science():
+    lang = request.args.get('lang')
     pages = NewsPage.query.filter_by(page='science').all()
     list_pages = []
     for page in pages:
@@ -2325,11 +2986,19 @@ def science():
     last_page = list_pages[-1]
     print(last_page)
     new_page = NewsPage.query.get(last_page)
-    return new_page.format(new_page.page)
+    if lang == 'uz':
+        return new_page.format_uz(new_page.page, lang)
+    if lang == 'ru':
+        return new_page.format_ru(new_page.page, lang)
+    if lang == 'en':
+        return new_page.format_en(new_page.page, lang)
+    if lang == None:
+        return new_page.format(new_page.page, lang)
 
 
 @tdau.route('/scientific', methods=['GET'])
 def scientific():
+    lang = request.args.get('lang')
     pages = NewsPage.query.filter_by(page='scientific').all()
     list_pages = []
     for page in pages:
@@ -2338,11 +3007,19 @@ def scientific():
     last_page = list_pages[-1]
     print(last_page)
     new_page = NewsPage.query.get(last_page)
-    return new_page.format(new_page.page)
+    if lang == 'uz':
+        return new_page.format_uz(new_page.page, lang)
+    if lang == 'ru':
+        return new_page.format_ru(new_page.page, lang)
+    if lang == 'en':
+        return new_page.format_en(new_page.page, lang)
+    if lang == None:
+        return new_page.format(new_page.page, lang)
 
 
 @tdau.route('/innovation', methods=['GET'])
 def innovation():
+    lang = request.args.get('lang')
     pages = NewsPage.query.filter_by(page='innovation').all()
     list_pages = []
     for page in pages:
@@ -2351,11 +3028,19 @@ def innovation():
     last_page = list_pages[-1]
     print(last_page)
     new_page = NewsPage.query.get(last_page)
-    return new_page.format(new_page.page)
+    if lang == 'uz':
+        return new_page.format_uz(new_page.page, lang)
+    if lang == 'ru':
+        return new_page.format_ru(new_page.page, lang)
+    if lang == 'en':
+        return new_page.format_en(new_page.page, lang)
+    if lang == None:
+        return new_page.format(new_page.page, lang)
 
 
 @tdau.route('/dev', methods=['GET'])
 def dev():
+    lang = request.args.get('lang')
     pages = NewsPage.query.filter_by(page='dev').all()
     list_pages = []
     for page in pages:
@@ -2364,7 +3049,14 @@ def dev():
     last_page = list_pages[-1]
     print(last_page)
     new_page = NewsPage.query.get(last_page)
-    return new_page.format(new_page.page)
+    if lang == 'uz':
+        return new_page.format_uz(new_page.page, lang)
+    if lang == 'ru':
+        return new_page.format_ru(new_page.page, lang)
+    if lang == 'en':
+        return new_page.format_en(new_page.page, lang)
+    if lang == None:
+        return new_page.format(new_page.page, lang)
 
 
 @tdau.route('/add_card', methods=['POST'])
@@ -2372,9 +3064,10 @@ def dev():
 def addCard(c):
     upper_img = request.files.get('upper_img')
     bottom_img = request.files.get('bottom_img')
-    card = News2(about=request.form.get('about'), video_link=request.form.get('video'), name=request.form.get('name'),
+    card = News2(about_uz=request.form.get('about_uz'), about_ru=request.form.get('about_ru'), about_en=request.form.get('about_en'), video_link=request.form.get('video'),
+                 name_uz=request.form.get('name_uz'), name_ru=request.form.get('name_ru'), name_en=request.form.get('name_en'),
                  for_page=request.form.get('page'),
-                 desc=request.form.get('desc'))
+                 desc_uz=request.form.get('desc_uz'), desc_ru=request.form.get('desc_ru'), desc_en=request.form.get('desc_en'), language=request.form.get('lang'))
 
     db.session.add(card)
     db.session.flush()
@@ -2386,11 +3079,27 @@ def addCard(c):
         card.bottom_img = save_picture(bottom_img, card.id, 'bottom_card_page')
 
     db.session.commit()
-    titles = request.form.get('title')
+    titles = request.form.get('title_uz')
     titles = eval(titles)
     for i in titles:
-        t = Text_ForNews(title_or_info=i["title"],
+        t = Text_ForNewsUz(title_or_info=i["title"],
                          text=i["text"], fordegree_id=card.id)
+        db.session.add(t)
+        db.session.commit()
+
+    titles = request.form.get('title_ru')
+    titles = eval(titles)
+    for i in titles:
+        t = Text_ForNewsRu(title_or_info=i["title"],
+                           text=i["text"], fordegree_id=card.id)
+        db.session.add(t)
+        db.session.commit()
+
+    titles = request.form.get('title_en')
+    titles = eval(titles)
+    for i in titles:
+        t = Text_ForNewsEn(title_or_info=i["title"],
+                           text=i["text"], fordegree_id=card.id)
         db.session.add(t)
         db.session.commit()
     return jsonify({'msg': 'added!'})
@@ -2404,11 +3113,18 @@ def updateCArd(c):
     bottom_img = request.files.get('bottom_img')
     card = News2.query.get(id)
 
-    card.name = request.form.get('name')
-    card.about = request.form.get('about')
+    card.name_uz = request.form.get('name_uz')
+    card.name_ru = request.form.get('name_ru')
+    card.name_en = request.form.get('name_en')
+    card.about_uz = request.form.get('about_uz')
+    card.about_ru = request.form.get('about_ru')
+    card.about_en = request.form.get('about_en')
     card.video_link = request.form.get('video')
-    card.desc = request.form.get('desc')
+    card.desc_uz = request.form.get('desc_uz')
+    card.desc_ru = request.form.get('desc_ru')
+    card.desc_en = request.form.get('desc_en')
     card.for_page = request.form.get('page')
+    card.language = request.form.get('lang')
 
     if upper_img and allowed_pic(upper_img.filename):
         card.upper_img = save_picture(upper_img, card.id, 'upper_card_page')
@@ -2416,18 +3132,43 @@ def updateCArd(c):
     if bottom_img and allowed_pic(bottom_img.filename):
         card.bottom_img = save_picture(bottom_img, card.id, 'bottom_card_page')
     db.session.commit()
-    if request.form.get("title"):
-        titles = request.form.get("title")
+    if request.form.get("title_uz"):
+        titles = request.form.get("title_uz")
 
         titles = eval(titles)
         if len(titles) > 0:
-            for j in Text_ForNews.query.filter_by(fordegree_id=id).all():
+            for j in Text_ForNewsUz.query.filter_by(fordegree_id=id).all():
                 db.session.delete(j)
                 db.session.commit()
             for i in titles:
-                db.session.add(Text_ForNews(
+                db.session.add(Text_ForNewsUz(
                     fordegree_id=card.id, title_or_info=i['title'], text=i['text']))
                 db.session.commit()
+    if request.form.get("title_ru"):
+        titles = request.form.get("title_ru")
+
+        titles = eval(titles)
+        if len(titles) > 0:
+            for j in Text_ForNewsRu.query.filter_by(fordegree_id=id).all():
+                db.session.delete(j)
+                db.session.commit()
+            for i in titles:
+                db.session.add(Text_ForNewsRu(
+                    fordegree_id=card.id, title_or_info=i['title'], text=i['text']))
+                db.session.commit()
+
+            if request.form.get("title_en"):
+                titles = request.form.get("title_en")
+
+                titles = eval(titles)
+                if len(titles) > 0:
+                    for j in Text_ForNewsEn.query.filter_by(fordegree_id=id).all():
+                        db.session.delete(j)
+                        db.session.commit()
+                    for i in titles:
+                        db.session.add(Text_ForNewsEn(
+                            fordegree_id=card.id, title_or_info=i['title'], text=i['text']))
+                        db.session.commit()
     return jsonify({'msg': 'updated'})
 
 
@@ -2436,10 +3177,13 @@ def updateCArd(c):
 def deleteCard(c):
     id = request.args.get('id')
     card = News2.query.get(id)
-
+    if card.upper_img != None and card.bottom_img != None:
+        db.session.delete(card)
+        full_path = os.path.join(current_app.root_path, 'static', 'card', str(card.id))
+        shutil.rmtree(full_path)
+        db.session.commit()
+        return jsonify({'msg': 'deleted!'}, 200)
     db.session.delete(card)
-    full_path = os.path.join(current_app.root_path, 'static', 'card', str(card.id))
-    shutil.rmtree(full_path)
     db.session.commit()
     return jsonify({'msg': 'deleted!'}, 200)
 

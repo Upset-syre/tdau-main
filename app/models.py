@@ -505,20 +505,136 @@ class UserMeta(db.Model):
 class News(db.Model):
     __table_args__ = {'extend_existing': True}
     id = db.Column(db.Integer, primary_key=True)
-    title_news = db.Column(db.String(120), nullable=False)
+    title_news_ru = db.Column(db.String(120), nullable=True)
+    title_news_uz = db.Column(db.String(120), nullable=True)
+    title_news_en = db.Column(db.String(120), nullable=True)
+    about_uz_2 = db.Column(db.String(120), nullable=True)
+    about_en_2 = db.Column(db.String(120), nullable=True)
+    about_ru_2 = db.Column(db.String(120), nullable=True)
+    video = db.Column(db.Text, nullable=True)
+    file = db.Column(db.Text, nullable=True)
     picture_news = db.Column(db.String(120), nullable=False)
+    picture_news_555 = db.Column(db.String(120), nullable=True)
     date_posted = db.Column(db.DateTime, default=datetime.datetime.now())
 
+    text_fornews_uz = db.relationship('Text_ForNews_Uz', backref='text_newsuz', lazy=True, cascade="all, delete-orphan")
+    text_fornews_ru = db.relationship('Text_ForNews_Ru', backref='text_newsru', lazy=True, cascade="all, delete-orphan")
+    text_fornews_en = db.relationship('Text_ForNews_En', backref='text_newsen', lazy=True, cascade="all, delete-orphan")
+
+
     # universities = db.relationship('Universities', backref='university')
-    def format(self):
+    def format_uz(self):
         return {
             'id': self.id,
-            'title_news': self.title_news,
-            'picture': self.picture_news,
-            'date_posted': self.date_posted
+            'title': self.title_news_uz,
+            'about': self.about_uz_2,
+            'video': f'/static/news/{self.id}/news_video/{self.video}',
+            'video_link': self.video,
+             'file': f'/static/news/{self.id}/news_file/{self.file}',
+            'picture': f'static/news/{self.id}/news_img_1/{self.picture_news}',
+            'picture2': f'static/news/{self.id}/news_img_2/{self.picture_news_555}',
+            'date_posted': self.date_posted,
+            "texts": [x.format() for x in self.text_fornews_uz],
 
         }
 
+    def format_ru(self):
+        return {
+            'id': self.id,
+            'title': self.title_news_ru,
+            'video': f'/static/news/{self.id}/news_video/{self.video}',
+            'video_link': self.video,
+            'about': self.about_ru_2,
+            'picture': f'static/news/{self.id}/news_img_1/{self.picture_news}',
+            'picture2': f'static/news/{self.id}/news_img_2/{self.picture_news_555}',
+            'date_posted': self.date_posted,
+            "texts": [x.format() for x in self.text_fornews_ru],
+            'file': f'/static/news/{self.id}/news_file/{self.file}'
+        }
+
+    def format_en(self):
+        return {
+            'id': self.id,
+            'title': self.title_news_en,
+            'video': f'/static/news/{self.id}/news_video/{self.video}',
+            'video_link': self.video,
+            'about': self.about_en_2,
+            'picture': f'static/news/{self.id}/news_img_1/{self.picture_news}',
+            'picture2': f'static/news/{self.id}/news_img_2/{self.picture_news_555}',
+            'date_posted': self.date_posted,
+            "texts": [x.format() for x in self.text_fornews_en],
+            'file': f'/static/news/{self.id}/news_file/{self.file}'
+        }
+
+    def format(self):
+        return {
+            'id': self.id,
+            'title_en': self.title_news_en,
+            'title_ru': self.title_news_ru,
+            'title_uz': self.title_news_uz,
+            'video': f'/static/news/{self.id}/news_video/{self.video}',
+            'video_link': self.video,
+            'about_uz': self.about_uz_2,
+            'about_ru': self.about_ru_2,
+            'about_en': self.about_en_2,
+              'picture': f'static/news/{self.id}/news_img_1/{self.picture_news}',
+            'picture2': f'static/news/{self.id}/news_img_2/{self.picture_news_555}',
+            'date_posted': self.date_posted,
+            "texts_uz": [x.format() for x in self.text_fornews_uz],
+            "texts_ru": [x.format() for x in self.text_fornews_ru],
+            "texts_en": [x.format() for x in self.text_fornews_en],
+            'file': f'/static/news/{self.id}/news_file/{self.file}'
+
+        }
+
+class Text_ForNews_Uz(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    fordegree_id = db.Column(db.Integer, db.ForeignKey('news.id'))
+    title_or_info = db.Column(db.String, default='info')
+    text = db.Column(db.Text, nullable=False)
+
+    def format(self):
+        return {
+
+            "id": self.id,
+            "fordegree_id": self.fordegree_id,
+            "title": self.title_or_info,
+            "text": self.text,
+
+        }
+
+class Text_ForNews_Ru(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    fordegree_id = db.Column(db.Integer, db.ForeignKey('news.id'))
+    title_or_info = db.Column(db.String, default='info')
+    text = db.Column(db.Text, nullable=False)
+
+    def format(self):
+        return {
+
+            "id": self.id,
+            "fordegree_id": self.fordegree_id,
+            "title": self.title_or_info,
+            "text": self.text,
+
+        }
+
+
+class Text_ForNews_En(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    fordegree_id = db.Column(db.Integer, db.ForeignKey('news.id'))
+    title_or_info = db.Column(db.String, default='info')
+    text = db.Column(db.Text, nullable=False)
+
+    def format(self):
+        return {
+
+            "id": self.id,
+            "fordegree_id": self.fordegree_id,
+            "title": self.title_or_info,
+            "text": self.text,
+
+        }
 
 # class Apllication_univer(db.Model):
 #     id = db.Column(db.Integer, primary_key=True)
@@ -811,21 +927,67 @@ class About_Page(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     photo1 = db.Column(db.String, nullable=False)
     photo2 = db.Column(db.String, nullable=False)
-    desc1 = db.Column(db.String, nullable=False)
-    desc2 = db.Column(db.String, nullable=False)
-    title = db.Column(db.String, nullable=False)
+    desc1_uz = db.Column(db.String, nullable=False)
+    desc1_ru = db.Column(db.String, nullable=False)
+    desc1_en = db.Column(db.String, nullable=False)
+    desc2_uz = db.Column(db.String, nullable=False)
+    desc2_ru = db.Column(db.String, nullable=False)
+    desc2_en = db.Column(db.String, nullable=False)
+    title_en = db.Column(db.String, nullable=False)
+    title_ru = db.Column(db.String, nullable=False)
+    title_uz = db.Column(db.String, nullable=False)
     link = db.Column(db.String, nullable=False)
 
     def format(self):
         return {
             "photo1": self.photo1,
             "photo2": self.photo2,
-            "desc1": self.desc1,
-            "desc2": self.desc2,
-            "title": self.title,
+            "desc1_uz": self.desc1_uz,
+            "desc1_ru": self.desc1_ru,
+            "desc1_en": self.desc1_en,
+            "desc2_uz": self.desc2_uz,
+            "desc2_ru": self.desc2_ru,
+            "desc2_en": self.desc2_en,
+            "title_uz": self.title_uz,
+            "title_ru": self.title_ru,
+            "title_en": self.title_en,
             "link": self.link
         }
 
+    def format_uz(self):
+        return {
+            "photo1": self.photo1,
+            "photo2": self.photo2,
+            "desc1_uz": self.desc1_uz,
+            "desc2_uz": self.desc2_uz,
+            "title_uz": self.title_uz,
+            "link": self.link
+        }
+
+    def format_ru(self):
+        return {
+            "photo1": self.photo1,
+            "photo2": self.photo2,
+            "desc1_ru": self.desc1_ru,
+            "desc2_ru": self.desc2_ru,
+            "title_ru": self.title_ru,
+            "link": self.link
+        }
+
+    def format_en(self):
+        return {
+            "photo1": self.photo1,
+            "photo2": self.photo2,
+            "desc1_en": self.desc1_en,
+            "desc2_en": self.desc2_en,
+            "title_en": self.title_en,
+            "link": self.link
+        }
+
+# subs = db.Table('subs',
+#                 db.Column('faculty_data_id'), db.ForeignKey('faculty_data.id'),
+#                 db.Column('programme_id'), db.ForeignKey('programme.id')
+#                 )
 
 class Branch(db.Model):
     __tablename__ = 'branch'
@@ -834,11 +996,17 @@ class Branch(db.Model):
     photo1 = db.Column(db.String, nullable=False)
     photo2 = db.Column(db.String, nullable=False)
     logo = db.Column(db.String, nullable=False)
-    desc = db.Column(db.String, nullable=False)
+    desc_uz = db.Column(db.String, nullable=False)
+    desc_ru = db.Column(db.String, nullable=False)
+    desc_en = db.Column(db.String, nullable=False)
     rector_photo = db.Column(db.String, nullable=False)
     rector_name = db.Column(db.String, nullable=False)
-    rector_reception = db.Column(db.String, nullable=False)
-    rector_address = db.Column(db.String, nullable=False)
+    rector_reception_uz = db.Column(db.String, nullable=False)
+    rector_reception_ru = db.Column(db.String, nullable=False)
+    rector_reception_en = db.Column(db.String, nullable=False)
+    rector_address_uz = db.Column(db.String, nullable=False)
+    rector_address_ru = db.Column(db.String, nullable=False)
+    rector_address_en = db.Column(db.String, nullable=False)
     rector_phone = db.Column(db.String, nullable=False)
     rector_email = db.Column(db.String, nullable=False)
 
@@ -849,60 +1017,241 @@ class Branch(db.Model):
             "photo1": self.photo1,
             "photo2": self.photo2,
             "logo": self.logo,
-            "desc": self.desc,
+            "desc_ru": self.desc_ru,
+            "desc_uz": self.desc_uz,
+            "desc_en": self.desc_en,
             "rector_photo": self.rector_photo,
             "rector_name": self.rector_name,
-            "rector_reception": self.rector_reception,
-            "rector_address": self.rector_address,
+            "rector_reception_uz": self.rector_reception_uz,
+            "rector_reception_ru": self.rector_reception_ru,
+            "rector_reception_en": self.rector_reception_en,
+            "rector_address_uz": self.rector_address_uz,
+            "rector_address_en": self.rector_address_en,
+            "rector_address_ru": self.rector_address_ru,
             "rector_phone": self.rector_phone,
             "rector_email": self.rector_email
         }
 
+    def format_uz(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "photo1": self.photo1,
+            "photo2": self.photo2,
+            "logo": self.logo,
+
+            "desc_uz": self.desc_uz,
+
+            "rector_photo": self.rector_photo,
+            "rector_name": self.rector_name,
+            "rector_reception_uz": self.rector_reception_uz,
+
+            "rector_address_uz": self.rector_address_uz,
+
+            "rector_phone": self.rector_phone,
+            "rector_email": self.rector_email
+        }
+
+    def format_ru(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "photo1": self.photo1,
+            "photo2": self.photo2,
+            "logo": self.logo,
+
+            "desc_ru": self.desc_ru,
+
+            "rector_photo": self.rector_photo,
+            "rector_name": self.rector_name,
+            "rector_reception_ru": self.rector_reception_ru,
+
+            "rector_address_ru": self.rector_address_ru,
+
+            "rector_phone": self.rector_phone,
+            "rector_email": self.rector_email
+        }
+
+    def format_en(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "photo1": self.photo1,
+            "photo2": self.photo2,
+            "logo": self.logo,
+
+            "desc_en": self.desc_en,
+
+            "rector_photo": self.rector_photo,
+            "rector_name": self.rector_name,
+            "rector_reception_en": self.rector_reception_en,
+
+            "rector_address_en": self.rector_address_en,
+
+            "rector_phone": self.rector_phone,
+            "rector_email": self.rector_email
+        }
 
 class Programme(db.Model):
     __tablename__ = 'programme'
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String, nullable=False)
+    name_uz = db.Column(db.String, nullable=False)
+    name_ru = db.Column(db.String, nullable=False)
+    name_en = db.Column(db.String, nullable=False)
     photo = db.Column(db.String, nullable=False)
-    desc = db.Column(db.String, nullable=False)
+    desc_uz = db.Column(db.String, nullable=False)
+    desc_en = db.Column(db.String, nullable=False)
+    desc_ru = db.Column(db.String, nullable=False)
     faculty_datas = relationship("Faculty_Data", cascade="all,delete", backref="programme", passive_deletes=True,
                                  lazy=True)
 
     def format(self):
         return {
             "id": self.id,
-            "name": self.name,
+            "name_uz": self.name_uz,
+            "name_ru": self.name_ru,
+            "name_en": self.name_en,
+
             "photo": self.photo,
-            "desc": self.desc,
+            "desc_uz": self.desc_uz,
+            "desc_en": self.desc_en,
+            "desc_ru": self.desc_ru,
             "count": len(self.faculty_datas)
         }
 
+    def format_uz(self):
+        return {
+            "id": self.id,
+            "name": self.name_uz,
+            "photo": self.photo,
+            "desc": self.desc_uz,
+            "count": len(self.faculty_datas)
+        }
+
+    def format_ru(self):
+        return {
+            "id": self.id,
+            "name": self.name_ru,
+            "photo": self.photo,
+            "desc": self.desc_ru,
+            "count": len(self.faculty_datas)
+        }
+
+    def format_en(self):
+        return {
+            "id": self.id,
+            "name": self.name_en,
+            "photo": self.photo,
+            "desc": self.desc_en,
+            "count": len(self.faculty_datas)
+        }
 
 class Faculty_Data(db.Model):
     __tablename__ = 'faculty_data'
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String, nullable=False)
-    photo = db.Column(db.String, nullable=False)
-    desc = db.Column(db.String, nullable=False)
+    name_uz = db.Column(db.String, nullable=False)
+    name_ru = db.Column(db.String, nullable=False)
+    name_en = db.Column(db.String, nullable=False)
+    photo = db.Column(db.String, nullable=True)
+    desc_uz = db.Column(db.String, nullable=False)
+    desc_en = db.Column(db.String, nullable=False)
+    desc_ru = db.Column(db.String, nullable=False)
     link = db.Column(db.String, nullable=False)
     programme_id = db.Column(db.Integer, db.ForeignKey('programme.id', ondelete='CASCADE'))
-    faculty_data_metas = relationship("Faculty_Data_Meta", cascade="all,delete", passive_deletes=True,
-                                      backref="faculty_data", lazy=True)
+    faculty_data_metas_uz = relationship("Faculty_Data_Meta_Uz", cascade="all,delete", passive_deletes=True,
+                                      backref="faculty_data_uz", lazy=True)
+    faculty_data_metas_ru = relationship("Faculty_Data_Meta_Ru", cascade="all,delete", passive_deletes=True,
+                                         backref="faculty_data_ru", lazy=True)
+    faculty_data_metas_en = relationship("Faculty_Data_Meta_En",  cascade="all,delete", passive_deletes=True,
+                                         backref="faculty_data_en", lazy=True)
 
     def format(self):
         return {
             "id": self.id,
-            "name": self.name,
+            "name_en": self.name_en,
+            "name_uz": self.name_uz,
+            "name_ru": self.name_ru,
             "photo": self.photo,
-            "desc": self.desc,
+            "desc_uz": self.desc_uz,
+            "desc_ru": self.desc_ru,
+            "desc_en": self.desc_en,
             "link": self.link,
             "programme_id": self.programme_id,
-            "faculty_data_metas": [x.format() for x in self.faculty_data_metas]
+            "faculty_data_metas_uz": [x.format() for x in self.faculty_data_metas_uz],
+            "faculty_data_metas_ru": [x.format() for x in self.faculty_data_metas_ru],
+            "faculty_data_metas_en": [x.format() for x in self.faculty_data_metas_en]
         }
 
 
-class Faculty_Data_Meta(db.Model):
-    __tablename__ = 'faculty_data_meta'
+    def format_uz(self):
+
+        return {
+            'pr_name':  self.programme.name_uz,
+            "id": self.id,
+            "name": self.name_uz,
+            "photo": self.photo,
+            "desc": self.desc_uz,
+            "link": self.link,
+            "programme_id": self.programme_id,
+            "faculty_data_metas": [x.format() for x in self.faculty_data_metas_uz]
+        }
+
+    def format_ru(self):
+        return {
+            'pr_name': self.programme.name_ru,
+            "id": self.id,
+            "name": self.name_ru,
+            "photo": self.photo,
+            "desc": self.desc_ru,
+            "link": self.link,
+            "programme_id": self.programme_id,
+            "faculty_data_metaskbh": [x.format() for x in self.faculty_data_metas_ru]
+        }
+
+    def format_en(self):
+        return {
+            'pr_name': self.programme.name_en,
+            "id": self.id,
+            "name": self.name_en,
+            "photo": self.photo,
+            "desc": self.desc_en,
+            "link": self.link,
+            "programme_id": self.programme_id,
+            "faculty_data_metas": [x.format() for x in self.faculty_data_metas_en]
+        }
+
+class Faculty_Data_Meta_Uz(db.Model):
+    __tablename__ = 'faculty_data_meta_uz'
+    id = db.Column(db.Integer, primary_key=True)
+    faculty_data_id = db.Column(db.Integer, db.ForeignKey('faculty_data.id', ondelete='CASCADE'))
+    key = db.Column(db.String, nullable=False)
+    value = db.Column(db.String, nullable=False)
+
+    def format(self):
+        return {
+            "id": self.id,
+            "faculty_data_id": self.faculty_data_id,
+            "key": self.key,
+            "value": self.value
+        }
+
+class Faculty_Data_Meta_Ru(db.Model):
+    __tablename__ = 'faculty_data_meta_ru'
+    id = db.Column(db.Integer, primary_key=True)
+    faculty_data_id = db.Column(db.Integer, db.ForeignKey('faculty_data.id', ondelete='CASCADE'))
+    key = db.Column(db.String, nullable=False)
+    value = db.Column(db.String, nullable=False)
+
+    def format(self):
+        return {
+            "id": self.id,
+            "faculty_data_id": self.faculty_data_id,
+            "key": self.key,
+            "value": self.value
+        }
+
+class Faculty_Data_Meta_En(db.Model):
+    __tablename__ = 'faculty_data_meta_en'
     id = db.Column(db.Integer, primary_key=True)
     faculty_data_id = db.Column(db.Integer, db.ForeignKey('faculty_data.id', ondelete='CASCADE'))
     key = db.Column(db.String, nullable=False)
@@ -946,31 +1295,90 @@ class Faculty_foreign(db.Model):
 class University_foreign(db.Model):
     __tablename__ = "university_foreign"
     id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String, nullable=True)
-    logo = db.Column(db.String, nullable=False)
-    picture = db.Column(db.String, nullable=False)
-    picture_desc = db.Column(db.String, nullable=False)
-    video = db.Column(db.String, nullable=False)
-    description = db.Column(db.String, nullable=False)
-    texts = db.relationship("Text_foreign", backref='university_foreign')
+    title_uz = db.Column(db.String, nullable=True)
+    title_ru = db.Column(db.String, nullable=True)
+    title_en = db.Column(db.String, nullable=True)
+    logo = db.Column(db.String, nullable=True)
+    picture = db.Column(db.String, nullable=True)
+    picture_desc = db.Column(db.String, nullable=True)
+    video = db.Column(db.String, nullable=True)
+    description_uz = db.Column(db.String, nullable=True)
+    description_en = db.Column(db.String, nullable=True)
+    description_ru = db.Column(db.String, nullable=True)
+    texts_uz = db.relationship("Text_foreign_uz", backref='university_foreign_uz')
+    texts_ru = db.relationship("Text_foreign_ru", backref='university_foreign_ru')
+    texts_en = db.relationship("Text_foreign_en", backref='university_foreign_en')
     faculties = relationship("Faculty_foreign", backref='university_foreign')
     edu_types_foreign = relationship("Education_type_foreign", backref='university_foreign')
     admissions_foreign = relationship("Admission_Foreign", backref='university_foreign')
     attaches = relationship('Adm_Attach_Foreign', cascade="all,delete", backref='university_foreign', lazy=True)
 
     def __repr__(self) -> str:
-        return "%s" % self.title
+        return "%s" % self.title_uz
 
     def format(self):
         return {
             "id": self.id,
-            "title": self.title,
-            "logo": self.logo,
-            "picture": self.picture,
-            "picture_desc": self.picture_desc,
-            "videos": self.video,
-            "description": self.description,
-            "texts": [x.format() for x in self.texts],
+            "title_uz": self.title_uz,
+            "title_ru": self.title_ru,
+            "title_en": self.title_en,
+            "logo": f'/static/university_foreign/{self.id}/logo/{self.logo}',
+            "picture": f'/static/university_foreign/{self.id}/picture/{self.picture}',
+            "picture_desc": f'/static/university_foreign/{self.id}/picture_desc/{self.picture_desc}',
+            "video_link": self.video,
+            'video_file': f'/static/university_foreign/{self.id}/video/{self.video}',
+            "description_uz": self.description_uz,
+            "description_ru": self.description_ru,
+            "description_en": self.description_en,
+            "texts_uz": [x.format() for x in self.texts_uz],
+            "texts_ru": [x.format() for x in self.texts_ru],
+            "texts_en": [x.format() for x in self.texts_en],
+            "faculties": [x.format() for x in self.faculties],
+            "edu_types_foreign": [x.format() for x in self.edu_types_foreign],
+        }
+
+
+    def format_uz(self):
+        return {
+            "id": self.id,
+            "title": self.title_uz,
+            "logo": f'/static/university_foreign/{self.id}/logo/{self.logo}',
+            "picture": f'/static/university_foreign/{self.id}/picture/{self.picture}',
+            "picture_desc": f'/static/university_foreign/{self.id}/picture_desc/{self.picture_desc}',
+            "video_link": self.video,
+            'video_file': f'/static/university_foreign/{self.id}/video/{self.video}',
+            "description": self.description_uz,
+            "texts": [x.format() for x in self.texts_uz],
+            "faculties": [x.format() for x in self.faculties],
+            "edu_types_foreign": [x.format() for x in self.edu_types_foreign],
+        }
+
+    def format_ru(self):
+        return {
+            "id": self.id,
+            "title": self.title_ru,
+            "logo": f'/static/university_foreign/{self.id}/logo/{self.logo}',
+            "picture": f'/static/university_foreign/{self.id}/picture/{self.picture}',
+            "picture_desc": f'/static/university_foreign/{self.id}/picture_desc/{self.picture_desc}',
+            "video_link": self.video,
+            'video_file': f'/static/university_foreign/{self.id}/video/{self.video}',
+            "description": self.description_ru,
+            "texts": [x.format() for x in self.texts_ru],
+            "faculties": [x.format() for x in self.faculties],
+            "edu_types_foreign": [x.format() for x in self.edu_types_foreign],
+        }
+
+    def format_en(self):
+        return {
+            "id": self.id,
+            "title": self.title_en,
+            "logo": f'/static/university_foreign/{self.id}/logo/{self.logo}',
+            "picture": f'/static/university_foreign/{self.id}/picture/{self.picture}',
+            "picture_desc": f'/static/university_foreign/{self.id}/picture_desc/{self.picture_desc}',
+            "video_link": self.video,
+            'video_file': f'/static/university_foreign/{self.id}/video/{self.video}',
+            "description": self.description_en,
+            "texts": [x.format() for x in self.texts_en],
             "faculties": [x.format() for x in self.faculties],
             "edu_types_foreign": [x.format() for x in self.edu_types_foreign],
         }
@@ -978,14 +1386,14 @@ class University_foreign(db.Model):
     def format2(self):
         return {
             "id": self.id,
-            "title": self.title,
+            "title_en": self.title_en,
             "logo": self.logo,
             # "admissions" : [x.format2() for x in self.admissions_foreign]
         }
 
 
-class Text_foreign(db.Model):
-    __tablename__ = "text_foreign"
+class Text_foreign_uz(db.Model):
+    __tablename__ = "text_foreign_uz"
     id = db.Column(db.Integer, primary_key=True)
     university_id = db.Column(db.Integer, db.ForeignKey('university_foreign.id'))
     title_or_info = db.Column(db.String, default='info')
@@ -1008,6 +1416,53 @@ class Text_foreign(db.Model):
         }
 
 
+class Text_foreign_ru(db.Model):
+    __tablename__ = "text_foreign_ru"
+    id = db.Column(db.Integer, primary_key=True)
+    university_id = db.Column(db.Integer, db.ForeignKey('university_foreign.id'))
+    title_or_info = db.Column(db.String, default='info')
+    text = db.Column(db.Text, nullable=False)
+
+    def format(self):
+        return {
+
+            "id": self.id,
+            "university_id": self.university_id,
+            "title": self.title_or_info,
+            "text": self.text,
+        }
+
+    def format_front(self):
+        return {
+            "id": self.id,
+            "title": self.title_or_info,
+            "text": self.text,
+        }
+
+
+class Text_foreign_en(db.Model):
+    __tablename__ = "text_foreign_en"
+    id = db.Column(db.Integer, primary_key=True)
+    university_id = db.Column(db.Integer, db.ForeignKey('university_foreign.id'))
+    title_or_info = db.Column(db.String, default='info')
+    text = db.Column(db.Text, nullable=False)
+
+    def format(self):
+        return {
+
+            "id": self.id,
+            "university_id": self.university_id,
+            "title": self.title_or_info,
+            "text": self.text,
+        }
+
+    def format_front(self):
+        return {
+            "id": self.id,
+            "title": self.title_or_info,
+            "text": self.text,
+        }
+
 class Gender_foreign(db.Model):
     __tablename__ = 'gender_foreign'
     id = db.Column(db.Integer, primary_key=True)
@@ -1024,33 +1479,115 @@ class Gender_foreign(db.Model):
 
 class Billboard(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.Text, nullable=False)
+    title_uz = db.Column(db.Text, nullable=True)
+    title_ru = db.Column(db.Text, nullable=True)
+    title_en = db.Column(db.Text, nullable=True)
     date = db.Column(db.Text, nullable=False)
     time = db.Column(db.Text, nullable=False)
-    desc = db.Column(db.Text, nullable=False)
+    desc_uz = db.Column(db.Text, nullable=True)
+    desc_ru = db.Column(db.Text, nullable=True)
+    desc_en = db.Column(db.Text, nullable=True)
     picture = db.Column(db.Text, nullable=False)
+
+    def format_uz(self):
+        return {
+            'id': self.id,
+            'title_uz': self.title_uz,
+            'date_bill': self.date,
+            'time_bill': self.time,
+            'time_uz': self.desc_uz,
+            'picture_bill': f'static/uploads/images/{self.picture}'
+
+        }
+
+    def format_ru(self):
+        return {
+            'id': self.id,
+            'title_ru': self.title_ru,
+            'date_bill': self.date,
+            'time_bill': self.time,
+            'time_ru': self.desc_ru,
+            'picture_bill': f'static/uploads/images/{self.picture}'
+
+        }
+
+    def format_en(self):
+        return {
+            'id': self.id,
+            'title_en': self.title_en,
+            'date_bill': self.date,
+            'time_bill': self.time,
+            'time_en': self.desc_en,
+            'picture_bill': f'static/uploads/images/{self.picture}'
+
+        }
 
     def format(self):
         return {
             'id': self.id,
-            'title_bill': self.title,
+            'title_en': self.title_en,
+            'title_ru': self.title_ru,
+            'title_uz': self.desc_uz,
             'date_bill': self.date,
             'time_bill': self.time,
-            'time_desc': self.desc,
-            'picture_bill': self.picture
+            'desc_en': self.desc_en,
+            'desc_ru': self.desc_ru,
+            'desc_uz': self.desc_uz,
+            'picture_bill': f'static/uploads/images/{self.picture}'
 
         }
+
 
 
 class Post(db.Model):
     __tablename__ = 'post'
     id = db.Column(db.Integer, primary_key=True)
     photo = db.Column(db.String, nullable=True)
-    rector_photo = db.Column(db.String, nullable=False)
+    rector_photo = db.Column(db.String, nullable=True)
     rector_name = db.Column(db.String, nullable=False)
-    description = db.Column(db.String, nullable=False)
-    additional_infos = relationship("Additional_Info_Meta", backref='post')
-    work_activities = relationship("Work_Activity_Meta", backref='post')
+    description_uz = db.Column(db.String, nullable=True)
+    description_ru = db.Column(db.String, nullable=True)
+    description_en = db.Column(db.String, nullable=True)
+    additional_infos_uz = relationship("Additional_Info_Meta_Uz", backref='post_uz')
+    additional_infos_ru = relationship("Additional_Info_Meta_Ru", backref='post_ru')
+    additional_infos_en = relationship("Additional_Info_Meta_En", backref='post_en')
+    work_activities_uz = relationship("Work_Activity_Meta_Uz", backref='post1_uz')
+    work_activities_ru = relationship("Work_Activity_Meta_Ru", backref='post1_ru')
+    work_activities_en = relationship("Work_Activity_Meta_En", backref='post1_en')
+
+    def format_uz(self):
+        return {
+            'id': self.id,
+            'photo': self.photo,
+            'rector_photo': self.rector_photo,
+            'rector_name': self.rector_name,
+            'description_uz': self.description_uz,
+            'additional_infos': [x.format() for x in self.additional_infos_uz],
+            'work_activities': [x.format() for x in self.work_activities_uz]
+        }
+
+    def format_ru(self):
+        return {
+            'id': self.id,
+            'photo': self.photo,
+            'rector_photo': self.rector_photo,
+            'rector_name': self.rector_name,
+            'description_ru': self.description_ru,
+            'additional_infos': [x.format() for x in self.additional_infos_ru],
+            'work_activities': [x.format() for x in self.work_activities_ru]
+        }
+
+    def format_en(self):
+        return {
+            'id': self.id,
+            'photo': self.photo,
+            'rector_photo': self.rector_photo,
+            'rector_name': self.rector_name,
+            'description_en': self.description_en,
+            'additional_infos': [x.format() for x in self.additional_infos_en],
+            'work_activities': [x.format() for x in self.work_activities_en],
+
+        }
 
     def format(self):
         return {
@@ -1058,40 +1595,106 @@ class Post(db.Model):
             'photo': self.photo,
             'rector_photo': self.rector_photo,
             'rector_name': self.rector_name,
-            'description': self.description,
-            'additional_infos': [x.format() for x in self.additional_infos],
-            'work_activities': [x.format() for x in self.work_activities]
+            'description_en': self.description_en,
+            'description_ru': self.description_ru,
+            'description_uz': self.description_uz,
+            'additional_infos_en': [x.format() for x in self.additional_infos_en],
+            'additional_infos_ru': [x.format() for x in self.additional_infos_ru],
+            'additional_infos_uz': [x.format() for x in self.additional_infos_uz],
+            'work_activities_en': [x.format() for x in self.work_activities_en],
+            'work_activities_ru': [x.format() for x in self.work_activities_ru],
+            'work_activities_uz': [x.format() for x in self.work_activities_uz],
+
         }
 
-
-class Additional_Info_Meta(db.Model):
-    __tablename__ = 'additional_info_meta'
+class Additional_Info_Meta_Uz(db.Model):
+    __tablename__ = 'additional_info_meta_uz'
     id = db.Column(db.Integer, primary_key=True)
     post_id = db.Column(db.Integer, db.ForeignKey('post.id'))
-    key = db.Column(db.String, nullable=False)
-    value = db.Column(db.String, nullable=False)
+    key = db.Column(db.String, nullable=True)
+    value = db.Column(db.String, nullable=True)
+
 
     def format(self):
         return {
             'id': self.id,
-            'key': self.key,
-            'value': self.value
+            'key_uz': self.key,
+            'value_uz': self.value
         }
 
 
-class Work_Activity_Meta(db.Model):
-    __tablename__ = 'work_activity_meta'
+class Additional_Info_Meta_Ru(db.Model):
+    __tablename__ = 'additional_info_meta_ru'
     id = db.Column(db.Integer, primary_key=True)
     post_id = db.Column(db.Integer, db.ForeignKey('post.id'))
-    key = db.Column(db.String, nullable=False)
-    value = db.Column(db.String, nullable=False)
+    key = db.Column(db.String, nullable=True)
+    value = db.Column(db.String, nullable=True)
 
     def format(self):
         return {
             'id': self.id,
-            'key': self.key,
-            'value': self.value
+            'key_ru': self.key,
+            'value_ru': self.value
         }
+
+class Additional_Info_Meta_En(db.Model):
+    __tablename__ = 'additional_info_meta_en'
+    id = db.Column(db.Integer, primary_key=True)
+    post_id = db.Column(db.Integer, db.ForeignKey('post.id'))
+    key = db.Column(db.String, nullable=True)
+    value = db.Column(db.String, nullable=True)
+
+    def format(self):
+        return {
+            'id': self.id,
+            'key_en': self.key,
+            'value_en': self.value
+        }
+
+
+class Work_Activity_Meta_Uz(db.Model):
+    __tablename__ = 'work_activity_meta_uz'
+    id = db.Column(db.Integer, primary_key=True)
+    post_id = db.Column(db.Integer, db.ForeignKey('post.id'))
+    key = db.Column(db.String, nullable=True)
+    value = db.Column(db.String, nullable=True)
+
+    def format(self):
+        return {
+            'id': self.id,
+            'key_uz': self.key,
+            'value_uz': self.value
+        }
+
+
+class Work_Activity_Meta_Ru(db.Model):
+    __tablename__ = 'work_activity_meta_ru'
+    id = db.Column(db.Integer, primary_key=True)
+    post_id = db.Column(db.Integer, db.ForeignKey('post.id'))
+    key = db.Column(db.String, nullable=True)
+    value = db.Column(db.String, nullable=True)
+
+    def format(self):
+        return {
+            'id': self.id,
+            'key_ru': self.key,
+            'value_ru': self.value
+        }
+
+class Work_Activity_Meta_En(db.Model):
+    __tablename__ = 'work_activity_meta_en'
+    id = db.Column(db.Integer, primary_key=True)
+    post_id = db.Column(db.Integer, db.ForeignKey('post.id'))
+    key = db.Column(db.String, nullable=True)
+    value = db.Column(db.String, nullable=True)
+
+    def format(self):
+        return {
+            'id': self.id,
+            'key_en': self.key,
+            'value_en': self.value
+        }
+
 
 
 class Structure(db.Model):
@@ -1099,8 +1702,12 @@ class Structure(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     role = db.Column(db.String, nullable=False)
     photo = db.Column(db.String, nullable=True)
-    fullname = db.Column(db.String, nullable=True)
-    desc = db.Column(db.String, nullable=True)
+    fullname_uz = db.Column(db.String, nullable=True)
+    # fullname_ru = db.Column(db.String, nullable=True)
+    # fullname_en = db.Column(db.String, nullable=True)
+    desc_uz = db.Column(db.String, nullable=True)
+    desc_en = db.Column(db.String, nullable=True)
+    desc_ru = db.Column(db.String, nullable=True)
     email = db.Column(db.String, nullable=True)
     phone = db.Column(db.String, nullable=True)
     reception_time = db.Column(db.String, nullable=True)
@@ -1110,13 +1717,57 @@ class Structure(db.Model):
             'id': self.id,
             'role': self.role,
             'photo': self.photo,
-            'fullname': self.fullname,
-            'desc': self.desc,
+            'fullname': self.fullname_uz,
+            # 'fullname_ru': self.fullname_ru,
+            # 'fullname_en': self.fullname_en,
+            'desc_en': self.desc_en,
+            'desc_ru': self.desc_ru,
+            'desc_uz': self.desc_uz,
             'email': self.email,
             'phone': self.phone,
             'reception_time': self.reception_time,
 
         }
+
+    def format_uz(self):
+        return {
+            'id': self.id,
+            'role': self.role,
+            'photo': self.photo,
+            'fullname': self.fullname_uz,
+            'desc_uz': self.desc_uz,
+            'email': self.email,
+            'phone': self.phone,
+            'reception_time': self.reception_time,
+
+        }
+
+    def format_ru(self):
+        return {
+            'id': self.id,
+            'role': self.role,
+            'photo': self.photo,
+            'fullname': self.fullname_uz,
+            'desc_ru': self.desc_ru,
+            'email': self.email,
+            'phone': self.phone,
+            'reception_time': self.reception_time,
+
+        }
+
+    def format_en(self):
+        return {
+            'id': self.id,
+            'role': self.role,
+            'photo': self.photo,
+            'fullname': self.fullname_uz,
+            'desc_en': self.desc_en,
+            'email': self.email,
+            'phone': self.phone,
+            'reception_time': self.reception_time,
+
+        }
+
 
 
 class JsonEcodeDict(db.TypeDecorator):
@@ -1146,7 +1797,7 @@ class Degrees(db.Model):
     university_name = db.Column(db.Text)
     degree = db.Column(db.Text)
     text_fordegrees = db.relationship('Text_Fordegrees', backref='text_degree', lazy=True, cascade="all, delete-orphan")
-
+    language = db.Column(db.Text)
     def format(self):
         return {
             'id': self.id,
@@ -1159,6 +1810,7 @@ class Degrees(db.Model):
             'university_name': self.university_name,
             'degree': self.degree,
             "texts": [x.format() for x in self.text_fordegrees],
+            'language': self.language
 
         }
 
@@ -1191,29 +1843,86 @@ class AdminFlask(db.Model, UserMixin):
 class NewsPage(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     img = db.Column(db.Text)
-    title = db.Column(db.Text)
-    desc = db.Column(db.Text)
+    title_uz = db.Column(db.Text)
+    title_ru = db.Column(db.Text)
+    title_en = db.Column(db.Text)
+    desc_uz = db.Column(db.Text)
+    desc_ru = db.Column(db.Text)
+    desc_en = db.Column(db.Text)
     page = db.Column(db.Text)
+    language = db.Column(db.Text)
 
     def updateGet(self):
         return {
             'id': self.id,
             'img': f'static/news_page/{self.id}/upper_img/{self.img}',
-            'title': self.title,
-            'desc': self.desc,
+            'title_uz': self.title_uz,
+            'title_ru': self.title_ru,
+            'title_en': self.title_en,
+            'desc_ru': self.desc_ru,
+            'desc_uz': self.desc_uz,
+            'desc_en': self.desc_en,
             'page': self.page,
+
 
         }
 
-    def format(self, for_page):
+    def format(self, for_page, lang):
+        cards = News2.query.filter_by(for_page=for_page ).all()
+        return {
+            'id': self.id,
+            'img': f'static/news_page/{self.id}/upper_img/{self.img}',
+            'title_uz': self.title_uz,
+            'title_ru': self.title_ru,
+            'title_en': self.title_en,
+            'desc_ru': self.desc_ru,
+            'desc_uz': self.desc_uz,
+            'desc_en': self.desc_en,
+            'page': self.page,
+            'cards': [x.format2() for x in cards],
+            # 'language': self.language
+        }
+
+    def format_uz(self, for_page, lang):
+        cards = News2.query.filter_by(for_page=for_page ).all()
+        return {
+            'id': self.id,
+            'img': f'static/news_page/{self.id}/upper_img/{self.img}',
+            'title_uz': self.title_uz,
+
+            'desc_uz': self.desc_uz,
+
+            'page': self.page,
+            'cards': [x.format_uz() for x in cards],
+            # 'language': self.language
+        }
+
+    def format_ru(self, for_page, lang):
         cards = News2.query.filter_by(for_page=for_page).all()
         return {
             'id': self.id,
             'img': f'static/news_page/{self.id}/upper_img/{self.img}',
-            'title': self.title,
-            'desc': self.desc,
+            'title_ru': self.title_ru,
+
+            'desc_ru': self.desc_ru,
+
             'page': self.page,
-            'cards': [x.format2() for x in cards]
+            'cards': [x.format_ru() for x in cards],
+            # 'language': self.language
+        }
+
+    def format_en(self, for_page, lang):
+        cards = News2.query.filter_by(for_page=for_page).all()
+        return {
+            'id': self.id,
+            'img': f'static/news_page/{self.id}/upper_img/{self.img}',
+            'title_en': self.title_en,
+
+            'desc_en': self.desc_en,
+
+            'page': self.page,
+            'cards': [x.format_en() for x in cards],
+            # 'language': self.language
         }
 
     def format2(self):
@@ -1221,9 +1930,15 @@ class NewsPage(db.Model):
         return {
             'id': self.id,
             'img': f'static/news_page/{self.id}/upper_img/{self.img}',
-            'title': self.title,
-            'desc': self.desc,
+             'title_uz': self.title_uz,
+            'title_ru': self.title_ru,
+            'title_en': self.title_en,
+            'desc_ru': self.desc_ru,
+            'desc_uz': self.desc_uz,
+            'desc_en': self.desc_en,
             'page': self.page,
+            # 'language': self.language,
+
 
         }
 
@@ -1233,12 +1948,21 @@ class News2(db.Model):
 
     upper_img = db.Column(db.Text)
     bottom_img = db.Column(db.Text)
-    about = db.Column(db.Text)
+    about_uz = db.Column(db.Text)
+    about_ru = db.Column(db.Text)
+    about_en = db.Column(db.Text)
     video_link = db.Column(db.Text)
-    name = db.Column(db.Text)
-    desc = db.Column(db.Text)
-    text_fornews = db.relationship('Text_ForNews', backref='text_news', lazy=True, cascade="all, delete-orphan")
+    name_uz = db.Column(db.Text)
+    name_ru = db.Column(db.Text)
+    name_en = db.Column(db.Text)
+    desc_uz = db.Column(db.Text)
+    desc_en = db.Column(db.Text)
+    desc_ru = db.Column(db.Text)
+    text_fornews_uz = db.relationship('Text_ForNewsUz', backref='text_news_uz', lazy=True, cascade="all, delete-orphan")
+    text_fornews_ru = db.relationship('Text_ForNewsRu', backref='text_news_ru', lazy=True, cascade="all, delete-orphan")
+    text_fornews_en = db.relationship('Text_ForNewsEn', backref='text_news_en', lazy=True, cascade="all, delete-orphan")
     for_page = db.Column(db.Text)
+    language = db.Column(db.Text)
 
     def format(self, cards):
         # cards = News2.query.filter_by(for_page=for_page).all()
@@ -1246,13 +1970,22 @@ class News2(db.Model):
             'id': self.id,
             'upper_img': f'/static/card/{self.id}/upper_img/{self.upper_img}',
             'bottom_img': f'/static/card/{self.id}/bottom_img/{self.bottom_img}',
-            'about': self.about,
+            'about_uz': self.about_uz,
+            'about_ru': self.about_ru,
+            'about_en': self.about_en,
             'video_link': self.video_link,
-            'name': self.name,
-            'desc': self.desc,
-            "texts": [x.format() for x in self.text_fornews],
+            'name_uz': self.name_uz,
+            'name_ru': self.name_ru,
+            'name_en': self.name_en,
+            'desc_uz': self.desc_uz,
+            'desc_ru': self.desc_ru,
+            'desc_en': self.desc_en,
+            "texts_uz": [x.format() for x in self.text_fornews_uz],
+            "texts_ru": [x.format() for x in self.text_fornews_ru],
+            "texts_en": [x.format() for x in self.text_fornews_en],
             'for_page': self.for_page,
-            'recommend': [x.format2() for x in cards]
+            'recommend': [x.format2() for x in cards],
+            # 'language': self.language
         }
 
     def format2(self):
@@ -1260,17 +1993,80 @@ class News2(db.Model):
             'id': self.id,
             'upper_img': f'/static/card/{self.id}/upper_img/{self.upper_img}',
             'bottom_img': f'/static/card/{self.id}/bottom_img/{self.bottom_img}',
-            'about': self.about,
-            'video_link': self.video_link,
-            'name': self.name,
-            'desc': self.desc,
             'for_page': self.for_page,
-            "texts": [x.format() for x in self.text_fornews],
+            'about_uz': self.about_uz,
+            'about_ru': self.about_ru,
+            'about_en': self.about_en,
+            'video_link': self.video_link,
+            'name_uz': self.name_uz,
+            'name_ru': self.name_ru,
+            'name_en': self.name_en,
+            'desc_uz': self.desc_uz,
+            'desc_ru': self.desc_ru,
+            'desc_en': self.desc_en,
+            "texts_uz": [x.format() for x in self.text_fornews_uz],
+            "texts_ru": [x.format() for x in self.text_fornews_ru],
+            "texts_en": [x.format() for x in self.text_fornews_en],
+            # 'language': self.language
 
         }
 
+    def format_uz(self):
+        return {
+            'id': self.id,
+            'upper_img': f'/static/card/{self.id}/upper_img/{self.upper_img}',
+            'bottom_img': f'/static/card/{self.id}/bottom_img/{self.bottom_img}',
+            'about_uz': self.about_uz,
+            'for_page': self.for_page,
+            'video_link': self.video_link,
+            'name_uz': self.name_uz,
 
-class Text_ForNews(db.Model):
+            'desc_uz': self.desc_uz,
+
+            "texts_uz": [x.format() for x in self.text_fornews_uz],
+
+            # 'language': self.language
+
+        }
+
+    def format_ru(self):
+        return {
+            'id': self.id,
+            'upper_img': f'/static/card/{self.id}/upper_img/{self.upper_img}',
+            'bottom_img': f'/static/card/{self.id}/bottom_img/{self.bottom_img}',
+            'about_ru': self.about_ru,
+            'for_page': self.for_page,
+            'video_link': self.video_link,
+            'name_ru': self.name_ru,
+
+            'desc_ru': self.desc_ru,
+
+            "texts_ru": [x.format() for x in self.text_fornews_ru],
+
+            # 'language': self.language
+
+        }
+
+    def format_en(self):
+        return {
+            'id': self.id,
+            'upper_img': f'/static/card/{self.id}/upper_img/{self.upper_img}',
+            'bottom_img': f'/static/card/{self.id}/bottom_img/{self.bottom_img}',
+            'about_en': self.about_en,
+            'for_page': self.for_page,
+            'video_link': self.video_link,
+            'name_en': self.name_en,
+
+            'desc_en': self.desc_en,
+
+            "texts_en": [x.format() for x in self.text_fornews_en],
+
+            # 'language': self.language
+        }
+
+
+
+class Text_ForNewsUz(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     fordegree_id = db.Column(db.Integer, db.ForeignKey('news2.id'))
     title_or_info = db.Column(db.String, default='info')
@@ -1281,7 +2077,39 @@ class Text_ForNews(db.Model):
 
             "id": self.id,
             "fordegree_id": self.fordegree_id,
-            "title": self.title_or_info,
-            "text": self.text,
+            "title_uz": self.title_or_info,
+            "text_uz": self.text,
+
+        }
+
+class Text_ForNewsRu(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    fordegree_id = db.Column(db.Integer, db.ForeignKey('news2.id'))
+    title_or_info = db.Column(db.String, default='info')
+    text = db.Column(db.Text, nullable=False)
+
+    def format(self):
+        return {
+
+            "id": self.id,
+            "fordegree_id": self.fordegree_id,
+            "title_ru": self.title_or_info,
+            "text_eu": self.text,
+
+        }
+
+class Text_ForNewsEn(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    fordegree_id = db.Column(db.Integer, db.ForeignKey('news2.id'))
+    title_or_info = db.Column(db.String, default='info')
+    text = db.Column(db.Text, nullable=False)
+
+    def format(self):
+        return {
+
+            "id": self.id,
+            "fordegree_id": self.fordegree_id,
+            "title_en": self.title_or_info,
+            "text_en": self.text,
 
         }

@@ -1,6 +1,5 @@
 from flask_login import logout_user, login_user, login_required
-
-from flask import request, jsonify, Blueprint, render_template, redirect, url_for
+from flask import request, jsonify, Blueprint, render_template, redirect, url_for, flash
 from .models import AdminFlask
 from . import db, login_manager, bcrypt
 
@@ -21,16 +20,16 @@ def load_user(user_id):
     return AdminFlask.query.get(int(user_id))
 
 
-@flask__admin.route('/createadmin')
-@login_required
-def createAdmin():
-    hash_pw = bcrypt.generate_password_hash('123456')
-    admin = AdminFlask(admin_name='admin', password=hash_pw)
-
-    db.session.add(admin)
-    db.session.commit()
-    print('admin created!')
-    return jsonify({'msg': 'created!'}, 200)
+# @flask__admin.route('/createadmin')
+# @login_required
+# def createAdmin():
+#     hash_pw = bcrypt.generate_password_hash('123456')
+#     admin = AdminFlask(admin_name='admin', password=hash_pw)
+#
+#     db.session.add(admin)
+#     db.session.commit()
+#     print('admin created!')
+#     return jsonify({'msg': 'created!'}, 200)
 
 
 @flask__admin.route('/login', methods=['POST', 'GET'])
@@ -43,6 +42,7 @@ def login():
 
                 print('krasavchik')
                 # return jsonify({'msg': 'ok'}, 200)
+                flash('You logged in!', 'green')
                 return redirect('/admin')
             else:
                 print('chort')
@@ -55,5 +55,5 @@ def login():
 @login_required
 def logout():
     logout_user()
-
+    flash('you logged out!')
     return redirect(url_for('flask__admin.login'))

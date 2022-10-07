@@ -1,17 +1,35 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" xmlns="http://www.w3.org/1999/html">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/css/bootstrap.min.css">
+      <link href="{{ url_for('static', filename='css/style.css')}}" rel="stylesheet">
+    <title>Flask Admin Login</title>
 </head>
-<body>
+<!--{% for message in get_flashed_messages() %}-->
+<!--    <div class="alert alert-warning alert-dismissible fade show" role="alert">-->
+<!--  {{ message }}-->
+<!--  <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>-->
+<!--</div>-->
+
+<!--{% endfor %}-->
+<body class="text-center">
+
+
+<main class="form-signin">
 <form action="" method="post" enctype="multipart/form-data">
-    <input type="text" name="name", placeholder="name">
-    <input type="password" name="pw", placeholder="password">
-    <input type="submit" value="submit">
-
+    <h1 class="h3 mb-3 fw-normal">Please sign in</h1>
+    <div class="form-floating">
+      <input type="text" name="name" class="form-control" id="floatingInput" placeholder="name" required>
+      <label for="floatingInput">Username</label>
+    </div>
+    <div class="form-floating">
+      <input type="password" name="pw"  class="form-control" id="floatingPassword" placeholder="Password" required>
+      <label for="floatingPassword">Password</label>
+    </div>
+    <button class="w-100 btn btn-lg btn-primary" type="submit">Sign in</button>
 </form>
-
-
+</main>
 </body>
+
 </html>

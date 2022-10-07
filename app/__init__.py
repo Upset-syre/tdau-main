@@ -76,7 +76,7 @@ def create_app(testing=False):
     admin.add_view(AdminModelView(Admission, db.session))
     admin.add_view(AdminModelView(Adm_Attach, db.session))
     admin.add_view(AdminModelView(University_foreign, db.session))
-    admin.add_view(AdminModelView(Text_foreign, db.session))
+    admin.add_view(AdminModelView(Text_foreign_uz, db.session))
     admin.add_view(AdminModelView(Faculty_foreign, db.session))
     admin.add_view(AdminModelView(Faculty, db.session))
     admin.add_view(AdminModelView(Faculty_meta, db.session))
